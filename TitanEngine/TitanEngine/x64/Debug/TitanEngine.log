@@ -1,0 +1,7 @@
+﻿  stdafx.cpp
+  D3D12DrawTriangle.cpp
+  DXSample.cpp
+  main.cpp
+  Win32Application.cpp
+  Generating Code...
+  TitanEngine.vcxproj -> D:\DX12\github\TitanEngine\TitanEngine\x64\Debug\TitanEngine.exe
