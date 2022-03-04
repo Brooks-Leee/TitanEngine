@@ -1,0 +1,354 @@
+﻿{
+	"allSMInMap": [
+		{
+			"transform":
+			{
+				"rotation":
+				{
+					"x": 0,
+					"y": 0,
+					"z": 0,
+					"w": 1
+				},
+				"translation":
+				{
+					"x": 0,
+					"y": 0,
+					"z": 0
+				},
+				"scale3D":
+				{
+					"x": 400,
+					"y": 400,
+					"z": 400
+				}
+			},
+			"assetPath": "SM_SkySphere.titan"
+		},
+		{
+			"transform":
+			{
+				"rotation":
+				{
+					"x": 0,
+					"y": -1.3470648809743579e-05,
+					"z": 0,
+					"w": 1
+				},
+				"translation":
+				{
+					"x": -399.75146484375,
+					"y": 0,
+					"z": 130.27708435058594
+				},
+				"scale3D":
+				{
+					"x": 0.75,
+					"y": 0.75,
+					"z": 1
+				}
+			},
+			"assetPath": "TemplateFloor.titan"
+		},
+		{
+			"transform":
+			{
+				"rotation":
+				{
+					"x": 0,
+					"y": 0,
+					"z": 0,
+					"w": 1
+				},
+				"translation":
+				{
+					"x": -390,
+					"y": 280,
+					"z": 125
+				},
+				"scale3D":
+				{
+					"x": 1,
+					"y": 1,
+					"z": 1
+				}
+			},
+			"assetPath": "Linear_Stair_StaticMesh.titan"
+		},
+		{
+			"transform":
+			{
+				"rotation":
+				{
+					"x": 0,
+					"y": 0,
+					"z": 0,
+					"w": 1
+				},
+				"translation":
+				{
+					"x": 169,
+					"y": -40,
+					"z": 94
+				},
+				"scale3D":
+				{
+					"x": 1,
+					"y": 1,
+					"z": 1
+				}
+			},
+			"assetPath": "Bump_StaticMesh.titan"
+		},
+		{
+			"transform":
+			{
+				"rotation":
+				{
+					"x": 0,
+					"y": 0,
+					"z": 0,
+					"w": 1
+				},
+				"translation":
+				{
+					"x": -90,
+					"y": -40,
+					"z": 105
+				},
+				"scale3D":
+				{
+					"x": 1,
+					"y": 1,
+					"z": 1
+				}
+			},
+			"assetPath": "LeftArm_StaticMesh.titan"
+		},
+		{
+			"transform":
+			{
+				"rotation":
+				{
+					"x": 0,
+					"y": 0,
+					"z": 0,
+					"w": 1
+				},
+				"translation":
+				{
+					"x": -90,
+					"y": 210,
+					"z": 105
+				},
+				"scale3D":
+				{
+					"x": 1,
+					"y": 1,
+					"z": 1
+				}
+			},
+			"assetPath": "RightArm_StaticMesh.titan"
+		},
+		{
+			"transform":
+			{
+				"rotation":
+				{
+					"x": 0,
+					"y": 0,
+					"z": 0,
+					"w": 1
+				},
+				"translation":
+				{
+					"x": -90,
+					"y": -310,
+					"z": 105
+				},
+				"scale3D":
+				{
+					"x": 1,
+					"y": 1,
+					"z": 1
+				}
+			},
+			"assetPath": "Ramp_StaticMesh.titan"
+		},
+		{
+			"transform":
+			{
+				"rotation":
+				{
+					"x": -9.4830411399016157e-06,
+					"y": -9.4830393209122121e-06,
+					"z": -0.70710676908493042,
+					"w": 0.70710676908493042
+				},
+				"translation":
+				{
+					"x": -1874.739501953125,
+					"y": 0.06109619140625,
+					"z": 530.25701904296875
+				},
+				"scale3D":
+				{
+					"x": 30,
+					"y": 0.5,
+					"z": 8
+				}
+			},
+			"assetPath": "1M_Cube.titan"
+		},
+		{
+			"transform":
+			{
+				"rotation":
+				{
+					"x": 0,
+					"y": 0,
+					"z": 0,
+					"w": 1
+				},
+				"translation":
+				{
+					"x": -290,
+					"y": -470,
+					"z": 194.6453857421875
+				},
+				"scale3D":
+				{
+					"x": 2,
+					"y": 2,
+					"z": 1.5
+				}
+			},
+			"assetPath": "1M_Cube_Chamfer.titan"
+		},
+		{
+			"transform":
+			{
+				"rotation":
+				{
+					"x": -9.4843207989470102e-06,
+					"y": -9.4843207989470102e-06,
+					"z": -0.70710676908493042,
+					"w": 0.70710676908493042
+				},
+				"translation":
+				{
+					"x": 1075.260498046875,
+					"y": 0.061096001416444778,
+					"z": 530.25701904296875
+				},
+				"scale3D":
+				{
+					"x": 30,
+					"y": 0.5,
+					"z": 8
+				}
+			},
+			"assetPath": "1M_Cube.titan"
+		},
+		{
+			"transform":
+			{
+				"rotation":
+				{
+					"x": 1.9955851207620334e-11,
+					"y": -1.3411044164968189e-05,
+					"z": 1.5146727037063101e-06,
+					"w": 1
+				},
+				"translation":
+				{
+					"x": -399.7410888671875,
+					"y": -1474.943359375,
+					"z": 530.25701904296875
+				},
+				"scale3D":
+				{
+					"x": 29,
+					"y": 0.5,
+					"z": 8
+				}
+			},
+			"assetPath": "1M_Cube.titan"
+		},
+		{
+			"transform":
+			{
+				"rotation":
+				{
+					"x": 2.0366567807239555e-11,
+					"y": -1.3412854968919419e-05,
+					"z": 1.518436420155922e-06,
+					"w": 1
+				},
+				"translation":
+				{
+					"x": -399.7410888671875,
+					"y": 1475.056640625,
+					"z": 530.25701904296875
+				},
+				"scale3D":
+				{
+					"x": 29,
+					"y": 0.5,
+					"z": 8
+				}
+			},
+			"assetPath": "1M_Cube.titan"
+		},
+		{
+			"transform":
+			{
+				"rotation":
+				{
+					"x": 0,
+					"y": -0,
+					"z": 0.99619472026824951,
+					"w": 0.087155729532241821
+				},
+				"translation":
+				{
+					"x": -380,
+					"y": -20,
+					"z": 130
+				},
+				"scale3D":
+				{
+					"x": 1,
+					"y": 1,
+					"z": 1
+				}
+			},
+			"assetPath": "SM_MatPreviewMesh_02.titan"
+		},
+		{
+			"transform":
+			{
+				"rotation":
+				{
+					"x": 0,
+					"y": 0,
+					"z": 0,
+					"w": 1
+				},
+				"translation":
+				{
+					"x": -1070.0025634765625,
+					"y": 370,
+					"z": 226.00160217285156
+				},
+				"scale3D":
+				{
+					"x": 1,
+					"y": 1,
+					"z": 1
+				}
+			},
+			"assetPath": "MatineeCam_SM.titan"
+		}
+	]
+}

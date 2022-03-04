@@ -5,15 +5,17 @@
 //#include <crtdbg.h>
 #endif
 
+#include "Application.h"
+
 //#include "d3dUtil.h"
 //#include "GameTimer.h"
 
 // Link necessary d3d12 libraries.
-#pragma comment(lib,"d3dcompiler.lib")
-#pragma comment(lib, "D3D12.lib")
-#pragma comment(lib, "dxgi.lib")
+//#pragma comment(lib,"d3dcompiler.lib")
+//#pragma comment(lib, "D3D12.lib")
+//#pragma comment(lib, "dxgi.lib")
 
-class D3DApp
+class D3DApp : public Application
 {
 protected:
 
@@ -23,9 +25,10 @@ protected:
     virtual ~D3DApp();
 
 public:
+    virtual bool Initialize() override;
 
-    static D3DApp* GetApp();
     
+    static D3DApp* GetApp();
 	HINSTANCE AppInst()const;
 	HWND      MainWnd()const;
 	float     AspectRatio()const;
@@ -33,9 +36,8 @@ public:
     bool Get4xMsaaState()const;
     void Set4xMsaaState(bool value);
 
-	int Run();
+    virtual int Run() override;
  
-    virtual bool Initialize();
     virtual LRESULT MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 protected:

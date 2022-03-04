@@ -1,15 +1,11 @@
 #pragma once
 #include "stdafx.h"
+#include "Scene.h"
 
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
 using namespace DirectX::PackedVector;
 
-struct Vertex
-{
-	XMFLOAT3 Pos;
-	XMFLOAT4 Color;
-};
 
 struct ObjectConstants
 {
@@ -26,8 +22,8 @@ public:
 
 	virtual bool Initialize()override;
 
-	void GetLoadedBinaryFile(FStaticMeshInfo* LoadedStruct);
-
+	void GetLoadedBinaryFile(FMeshData* LoadedStruct);
+	void GetLoadedAllActor(std::vector<FSceneData> AllActorArr);
 
 private:
 	virtual void OnResize()override;
@@ -50,14 +46,21 @@ private:
 	ComPtr<ID3D12RootSignature> mRootSignature = nullptr;
 	ComPtr<ID3D12DescriptorHeap> mCbvHeap = nullptr;
 
-	std::unique_ptr<UploadBuffer<ObjectConstants>> mObjectCB = nullptr;
+	std::vector<ComPtr<ID3D12DescriptorHeap>> mCbvHeapArr;
 
-	std::unique_ptr<MeshGeometry> mBoxGeo = nullptr;
+	std::unique_ptr<MeshGeometry> mGeo = nullptr;
+
+	std::unique_ptr<Scene> mAllActor;
+	std::vector<std::shared_ptr<MeshGeometry>> mGeoArr;
 
 	ComPtr<ID3DBlob> mvsByteCode = nullptr;
 	ComPtr<ID3DBlob> mpsByteCode = nullptr;
 
 	std::vector<D3D12_INPUT_ELEMENT_DESC> mInputLayout;
+
+
+	std::unique_ptr<UploadBuffer<ObjectConstants>> mObjectCB = nullptr;
+	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> uploadBufferArr;
 
 	ComPtr<ID3D12PipelineState> mPSO = nullptr;
 
@@ -70,5 +73,7 @@ private:
 	float mRadius = 300.0f;
 
 	POINT mLastMousePos;
-	FStaticMeshInfo* mLoadedStruct;
+
+	FMeshData* mLoadedStruct;
+	//Scene* mAllActor;
 };

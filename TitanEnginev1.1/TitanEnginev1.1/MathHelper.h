@@ -3,6 +3,10 @@
 #include <Windows.h>
 #include <DirectXMath.h>
 #include <cstdint>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 
 class MathHelper
 {
@@ -51,6 +55,7 @@ public:
 	// Returns the polar angle of the point (x,y) in [0, 2*PI).
 	static float AngleFromXY(float x, float y);
 
+
 	static DirectX::XMVECTOR SphericalToCartesian(float radius, float theta, float phi)
 	{
 		return DirectX::XMVectorSet(
@@ -71,6 +76,7 @@ public:
         DirectX::XMVECTOR det = DirectX::XMMatrixDeterminant(A);
         return DirectX::XMMatrixTranspose(DirectX::XMMatrixInverse(&det, A));
 	}
+
 
     static DirectX::XMFLOAT4X4 Identity4x4()
     {

@@ -1,12 +1,17 @@
 #pragma once
-struct FVector
+#include "MyMath.h"
+#include <DirectXMath.h>
+
+using namespace DirectX;
+
+struct Vertex
 {
-	float x;
-	float y;
-	float z;
+	XMFLOAT3 Pos;
+	XMFLOAT4 Color;
+	XMFLOAT4 Normal;
 };
 
-struct FStaticMeshInfo
+struct FMeshData
 {
 	int32_t VerticesNum;
 	int32_t TriangleNum;
@@ -15,6 +20,7 @@ struct FStaticMeshInfo
 	std::string AssetPath;
 	std::vector<FVector> Vertices;
 	std::vector<uint32_t> indices;
+	std::vector<FVector4> normals;
 };
 
 
@@ -22,9 +28,9 @@ class StaticMesh
 {
 public:
 	void LoadBinaryFile(const std::string& FilePath);
-	FStaticMeshInfo* GetStaticMesh();
+	FMeshData* GetStaticMesh();
 
 
 private:
-	FStaticMeshInfo StaticMeshInfo;
+	FMeshData StaticMeshInfo;
 };
