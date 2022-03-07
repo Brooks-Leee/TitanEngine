@@ -1,23 +1,23 @@
 #include "stdafx.h"
-#include "BoxApp.h"
+#include "AppDraw.h"
 //#include "d3dApp.h"
 //#include "MathHelper.h"
 //#include "UploadBuffer.h"
 #include "Scene.h"
 
 
-BoxApp::BoxApp(HINSTANCE hInstance)
-: D3DApp(hInstance) 
+AppDraw::AppDraw(HINSTANCE hInstance)
+: AppInit(hInstance) 
 {
 }
 
-BoxApp::~BoxApp()
+AppDraw::~AppDraw()
 {
 }
 
-bool BoxApp::Initialize()
+bool AppDraw::Initialize()
 {
-    if(!D3DApp::Initialize())
+    if(!AppInit::Initialize())
 		return false;
 		
     // Reset the command list to prep for initialization commands.
@@ -45,19 +45,20 @@ bool BoxApp::Initialize()
 	return true;
 }
 
-void BoxApp::OnResize()
+void AppDraw::OnResize()
 {
-	D3DApp::OnResize();
+	AppInit::OnResize();
 
     // The window resized, so update the aspect ratio and recompute the projection matrix.
-    XMMATRIX P = XMMatrixPerspectiveFovLH(0.25f*MathHelper::Pi, AspectRatio(), 1.0f, 10000.0f);
-    XMStoreFloat4x4(&mProj, P);
+	
+	glm::mat4x4 P = glm::perspectiveFovLH(0.25f * MathHelper::Piglm, (float)mClientWidth, (float)mClientHeight, 1.0f, 10000.0f);
+   // XMMATRIX P = XMMatrixPerspectiveFovLH(0.25f*MathHelper::Pi, AspectRatio(), 1.0f, 10000.0f);
+	mProj = P;
 }
 
-void BoxApp::Update(const GameTimer& gt)
+void AppDraw::Update(const GameTimer& gt)
 {
 	ObjectConstants objConstants;
-
 	for (int i = 0; i < mGeoArr.size(); i++)
 	{
 		// Convert Spherical to Cartesian coordinates.
@@ -66,19 +67,32 @@ void BoxApp::Update(const GameTimer& gt)
 		float y = mRadius * cosf(mPhi);
 
 		// Build the view matrix.
-		XMVECTOR pos = XMVectorSet(x, y, z, 1.0f);
+		/*XMVECTOR pos = XMVectorSet(x, y, z, 1.0f);
 		XMVECTOR target = XMVectorZero();
-		XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+		XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);*/
 
-		XMMATRIX view = XMMatrixLookAtLH(pos, target, up);
-		XMStoreFloat4x4(&mView, view);
+		/*glm::vec4 pos = glm::vec4(x, y, z, 1.0f);
+		glm::vec4 target = MathHelper::glmVecZero();
+		glm::vec4 up = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);*/
+
+		glm::vec3 pos = glm::vec3(x, y, z);
+		glm::vec3 target = glm::vec3(0.0f, 0.0f, 0.0f);
+		glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+
+		glm::mat4 view = glm::lookAtLH(pos, target, up);
+		//XMMATRIX view = XMMatrixLookAtLH(pos, target, up);
+		//XMStoreFloat4x4(&mView, view);
+		mView = view;
 
 	//	XMMatrixRotationQuaternion()
-		auto scale = XMMatrixScaling(
+		/*auto scale = XMMatrixScaling(
 			mAllActor->SceneDataArr[i].Transform.scale.x,
 			mAllActor->SceneDataArr[i].Transform.scale.y,
 			mAllActor->SceneDataArr[i].Transform.scale.z
 		);
+
+
+
 		DirectX::XMVECTORF32 XMRotation = { { {
 				mAllActor->SceneDataArr[i].Transform.rotation.pitch,
 				mAllActor->SceneDataArr[i].Transform.rotation.yaw,
@@ -90,28 +104,56 @@ void BoxApp::Update(const GameTimer& gt)
 			mAllActor->SceneDataArr[i].Transform.location.x,
 			mAllActor->SceneDataArr[i].Transform.location.y,
 			mAllActor->SceneDataArr[i].Transform.location.z
+		);*/
+
+		auto scalev = glm::vec3(
+			mAllActor->SceneDataArr[i].Transform.scale.x,
+			mAllActor->SceneDataArr[i].Transform.scale.y,
+			mAllActor->SceneDataArr[i].Transform.scale.z
 		);
+		auto rotationv = glm::quat(
+			mAllActor->SceneDataArr[i].Transform.rotation.pitch,
+			mAllActor->SceneDataArr[i].Transform.rotation.yaw,
+			mAllActor->SceneDataArr[i].Transform.rotation.roll,
+			mAllActor->SceneDataArr[i].Transform.rotation.w
+		);
+		auto locationv = glm::vec3(
+			mAllActor->SceneDataArr[i].Transform.location.x,
+			mAllActor->SceneDataArr[i].Transform.location.y,
+			mAllActor->SceneDataArr[i].Transform.location.z
+		);
+		
+		auto scale = glm::scale(MathHelper::Identity4x4glm(), scalev);
+		auto rotation = glm::mat4_cast(rotationv);
+		auto location = glm::translate(MathHelper::Identity4x4glm(), locationv);
 
+		glm::mat4 world = scale * rotation * location;
 
-		XMMATRIX world = scale * rotation * location;
+		glm::mat4 proj = mProj;
+
+		//XMMATRIX world = scale * rotation * location;
 //		XMMATRIX world = XMLoadFloat4x4(&mWorld);
-		XMMATRIX proj = XMLoadFloat4x4(&mProj);
-		XMMATRIX worldViewProj = world * view * proj;
+		//XMMATRIX proj = XMLoadFloat4x4(&mProj);
+		glm::mat4 worldViewProj = proj * view * world;
 
+		objConstants.WorldViewProj = glm::transpose(worldViewProj);
+		objConstants.gTime = gt.TotalTime();
+		mObjectCB->CopyData(i, objConstants);
 
 		// Update the constant buffer with the latest worldViewProj matrix.
-		XMStoreFloat4x4(&objConstants.WorldViewProj, XMMatrixTranspose(worldViewProj));
-		mObjectCB->CopyData(i, objConstants);
+		//XMStoreFloat4x4(&objConstants.WorldViewProj, XMMatrixTranspose(worldViewProj));
 
 	}
     
 }
 
-void BoxApp::Draw(const GameTimer& gt)
+void AppDraw::Draw(const GameTimer& gt)
 {
     // Reuse the memory associated with command recording.
     // We can only reset when the associated command lists have finished execution on the GPU.
 	ThrowIfFailed(mDirectCmdListAlloc->Reset());
+
+
 
 	// A command list can be reset after it has been added to the command queue via ExecuteCommandList.
     // Reusing the command list reuses memory.
@@ -119,7 +161,7 @@ void BoxApp::Draw(const GameTimer& gt)
 
     mCommandList->RSSetViewports(1, &mScreenViewport);
     mCommandList->RSSetScissorRects(1, &mScissorRect);
-
+	
 
     // Indicate a state transition on the resource usage.
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
@@ -131,6 +173,7 @@ void BoxApp::Draw(const GameTimer& gt)
 	
     // Specify the buffers we are going to render to.
 	mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
+
 
 	ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvHeap.Get() };
 	mCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
@@ -175,7 +218,7 @@ void BoxApp::Draw(const GameTimer& gt)
 	FlushCommandQueue();
 }
 
-void BoxApp::OnMouseDown(WPARAM btnState, int x, int y)
+void AppDraw::OnMouseDown(WPARAM btnState, int x, int y)
 {
     mLastMousePos.x = x;
     mLastMousePos.y = y;
@@ -183,12 +226,12 @@ void BoxApp::OnMouseDown(WPARAM btnState, int x, int y)
     SetCapture(mhMainWnd);
 }
 
-void BoxApp::OnMouseUp(WPARAM btnState, int x, int y)
+void AppDraw::OnMouseUp(WPARAM btnState, int x, int y)
 {
     ReleaseCapture();
 }
 
-void BoxApp::OnMouseMove(WPARAM btnState, int x, int y)
+void AppDraw::OnMouseMove(WPARAM btnState, int x, int y)
 {
     if((btnState & MK_LBUTTON) != 0)
     {
@@ -201,7 +244,7 @@ void BoxApp::OnMouseMove(WPARAM btnState, int x, int y)
         mPhi += dy;
 
         // Restrict the angle mPhi.
-        mPhi = MathHelper::Clamp(mPhi, 0.1f, MathHelper::Pi - 0.1f);
+        mPhi = MathHelper::Clamp(mPhi, 0.1f, MathHelper::Piglm - 0.1f);
     }
     else if((btnState & MK_RBUTTON) != 0)
     {
@@ -219,17 +262,19 @@ void BoxApp::OnMouseMove(WPARAM btnState, int x, int y)
     mLastMousePos.y = y;
 }
 
-void BoxApp::GetLoadedBinaryFile(FMeshData* LoadedStruct)
+void AppDraw::GetLoadedBinaryFile(FMeshData* LoadedStruct)
 {
 	mLoadedStruct = LoadedStruct;
 }
 
 
 
-void BoxApp::BuildDescriptorHeaps()
+void AppDraw::BuildDescriptorHeaps()
 {
     D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc;
+	// NumDescriptors should be the Actor num
     cbvHeapDesc.NumDescriptors = mAllActor->SceneDataArr.size();
+
     cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	cbvHeapDesc.NodeMask = 0;
@@ -237,7 +282,7 @@ void BoxApp::BuildDescriptorHeaps()
         IID_PPV_ARGS(&mCbvHeap)));
 }
 
-void BoxApp::BuildConstantBuffers()
+void AppDraw::BuildConstantBuffers()
 {
 
 	mObjectCB = std::make_unique<UploadBuffer<ObjectConstants>>(md3dDevice.Get(), mAllActor->SceneDataArr.size(), true);
@@ -245,8 +290,7 @@ void BoxApp::BuildConstantBuffers()
 	UINT DescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	UINT objCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
-	//UINT constantBufferSize = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
-
+	
 	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
 
 	for (int i = 0; i < mAllActor->SceneDataArr.size(); i++)
@@ -258,7 +302,6 @@ void BoxApp::BuildConstantBuffers()
 		cbvDesc.BufferLocation = cbAddress;
 		cbvDesc.SizeInBytes = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
 		md3dDevice->CreateConstantBufferView(&cbvDesc, heapCPUHandle);
-		
 	}
 
 	//	mObjectCB = std::make_unique<UploadBuffer<ObjectConstants>>(md3dDevice.Get(), 1, true);
@@ -281,7 +324,7 @@ void BoxApp::BuildConstantBuffers()
 
 }
 
-void BoxApp::BuildRootSignature()
+void AppDraw::BuildRootSignature()
 {
 	// Shader programs typically require resources as input (constant buffers,
 	// textures, samplers).  The root signature defines the resources the shader
@@ -320,12 +363,16 @@ void BoxApp::BuildRootSignature()
 		IID_PPV_ARGS(&mRootSignature)));
 }
 
-void BoxApp::BuildShadersAndInputLayout()
+void AppDraw::BuildShadersAndInputLayout()
 {
     HRESULT hr = S_OK;
     
 	mvsByteCode = d3dUtil::CompileShader(L"Assets\\Shaders\\color.hlsl", nullptr, "VS", "vs_5_0");
 	mpsByteCode = d3dUtil::CompileShader(L"Assets\\Shaders\\color.hlsl", nullptr, "PS", "ps_5_0");
+
+	/*mvsByteCodeWPO = d3dUtil::CompileShader(L"Assets\\Shaders\\WPO.hlsl", nullptr, "VS", "vs_5_0");
+	mpsByteCodeWPO = d3dUtil::CompileShader(L"Assets\\Shaders\\WPO.hlsl", nullptr, "PS", "vs_5_0");*/
+
 
     mInputLayout =
     {
@@ -335,7 +382,7 @@ void BoxApp::BuildShadersAndInputLayout()
     };
 }
 
-void BoxApp::BuildGeometry()
+void AppDraw::BuildGeometry()
 {
 
 	/*const char* FilePath = "Assets\\Map\\Map.titan";
@@ -356,7 +403,9 @@ void BoxApp::BuildGeometry()
 			vertices[i].Pos.y = meshData->second->Vertices[i].y;
 			vertices[i].Pos.z = meshData->second->Vertices[i].z;
 
-			vertices[i].Color = XMFLOAT4(Colors::Green);
+			vertices[i].Color = glm::vec4(0.780f, 0.341f, 0.341f, 1.0f);
+
+		//	vertices[i].Color = XMFLOAT4(Colors::Green);
 
 			vertices[i].Normal.x = meshData->second->normals[i].x;
 			vertices[i].Normal.y = meshData->second->normals[i].y;
@@ -407,7 +456,7 @@ void BoxApp::BuildGeometry()
 
 }
 
-void BoxApp::BuildPSO()
+void AppDraw::BuildPSO()
 {
     D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
     ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));

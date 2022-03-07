@@ -3,22 +3,23 @@
 #include "Scene.h"
 
 using Microsoft::WRL::ComPtr;
-using namespace DirectX;
-using namespace DirectX::PackedVector;
+//using namespace DirectX;
+//using namespace DirectX::PackedVector;
 
 
 struct ObjectConstants
 {
-	XMFLOAT4X4 WorldViewProj = MathHelper::Identity4x4();
+	glm::mat4x4 WorldViewProj = MathHelper::Identity4x4glm();
+	float gTime;
 };
 
-class BoxApp : public D3DApp
+class AppDraw : public AppInit
 {
 public:
-	BoxApp(HINSTANCE hInstance);
-	BoxApp(const BoxApp& rhs) = delete;
-	BoxApp& operator=(const BoxApp& rhs) = delete;
-	~BoxApp();
+	AppDraw(HINSTANCE hInstance);
+	AppDraw(const AppDraw& rhs) = delete;
+	AppDraw& operator=(const AppDraw& rhs) = delete;
+	~AppDraw();
 
 	virtual bool Initialize()override;
 
@@ -55,6 +56,8 @@ private:
 
 	ComPtr<ID3DBlob> mvsByteCode = nullptr;
 	ComPtr<ID3DBlob> mpsByteCode = nullptr;
+	ComPtr<ID3DBlob> mvsByteCodeWPO = nullptr;
+	ComPtr<ID3DBlob> mpsByteCodeWPO = nullptr;
 
 	std::vector<D3D12_INPUT_ELEMENT_DESC> mInputLayout;
 
@@ -64,13 +67,13 @@ private:
 
 	ComPtr<ID3D12PipelineState> mPSO = nullptr;
 
-	XMFLOAT4X4 mWorld = MathHelper::Identity4x4();
-	XMFLOAT4X4 mView = MathHelper::Identity4x4();
-	XMFLOAT4X4 mProj = MathHelper::Identity4x4();
+	glm::mat4x4 mWorld = MathHelper::Identity4x4glm();
+	glm::mat4x4 mView = MathHelper::Identity4x4glm();
+	glm::mat4x4 mProj = MathHelper::Identity4x4glm();
 
-	float mTheta = 1.5f * XM_PI;
-	float mPhi = XM_PIDIV4;
-	float mRadius = 300.0f;
+	float mTheta = 1.5f * MathHelper::Piglm;
+	float mPhi = MathHelper::XM_PIDIV4glm;
+	float mRadius = 3000.0f;
 
 	POINT mLastMousePos;
 

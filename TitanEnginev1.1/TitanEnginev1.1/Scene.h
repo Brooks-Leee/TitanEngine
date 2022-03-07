@@ -14,9 +14,7 @@ class Scene
 {
 public:
 	void LoadAllActorInMap(const std::string& FilePath);
-	std::vector<FSceneData> GetAllSMInMapInfo();
 
-	
 public:
 	FSceneData SceneData;
 	std::vector<FSceneData> SceneDataArr;

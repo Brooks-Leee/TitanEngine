@@ -1,13 +1,13 @@
 #include "stdafx.h"
-#include "BoxApp.h"
-//#include "d3dApp.h"
-//#include "MathHelper.h"
-//#include "UploadBuffer.h"
+#include "AppDraw.h"
 #include "Scene.h"
-
+#include "TitanEngine.h"
 
 #if defined(_PLATFORM_IOS)
 int main()
+{
+
+}
 #endif
 
 
@@ -18,17 +18,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
 	#if defined(DEBUG) | defined(_DEBUG)
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 	#endif
-
 	try
 	{
-		//std::string FilePath = "Assets\\StaticMesh\\1M_Cube.dat";
-		////BoxApp theApp(hInstance);
-		//std::unique_ptr<StaticMesh> staticMesh = std::make_unique<StaticMesh>();
-		//staticMesh->LoadBinaryFile(FilePath);
-		//theApp.GetLoadedBinaryFile(staticMesh->GetStaticMesh());
-		//theApp.GetLoadedAllActor(AllActor->SceneDataArr);
-
-		std::unique_ptr<Application> myApp = std::make_unique<BoxApp>(hInstance);
+		std::unique_ptr<Application> myApp = std::make_unique<AppDraw>(hInstance);
 
 		if (!myApp->Initialize())
 			return 0;

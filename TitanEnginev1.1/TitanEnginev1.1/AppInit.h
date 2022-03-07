@@ -15,20 +15,20 @@
 //#pragma comment(lib, "D3D12.lib")
 //#pragma comment(lib, "dxgi.lib")
 
-class D3DApp : public Application
+class AppInit : public Application
 {
 protected:
 
-    D3DApp(HINSTANCE hInstance);
-    D3DApp(const D3DApp& rhs) = delete;
-    D3DApp& operator=(const D3DApp& rhs) = delete;
-    virtual ~D3DApp();
+    AppInit(HINSTANCE hInstance);
+    AppInit(const AppInit& rhs) = delete;
+    AppInit& operator=(const AppInit& rhs) = delete;
+    virtual ~AppInit();
 
 public:
     virtual bool Initialize() override;
 
     
-    static D3DApp* GetApp();
+    static AppInit* GetApp();
 	HINSTANCE AppInst()const;
 	HWND      MainWnd()const;
 	float     AspectRatio()const;
@@ -57,7 +57,6 @@ protected:
 	bool InitDirect3D();
 	void CreateCommandObjects();
     void CreateSwapChain();
-
 	void FlushCommandQueue();
 
 	ID3D12Resource* CurrentBackBuffer()const;
@@ -65,14 +64,13 @@ protected:
 	D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilView()const;
 
 	void CalculateFrameStats();
-
     void LogAdapters();
     void LogAdapterOutputs(IDXGIAdapter* adapter);
     void LogOutputDisplayModes(IDXGIOutput* output, DXGI_FORMAT format);
 
 protected:
 
-    static D3DApp* mApp;
+    static AppInit* mApp;
 
     HINSTANCE mhAppInst = nullptr; // application instance handle
     HWND      mhMainWnd = nullptr; // main window handle

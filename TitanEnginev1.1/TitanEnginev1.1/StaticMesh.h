@@ -6,9 +6,9 @@ using namespace DirectX;
 
 struct Vertex
 {
-	XMFLOAT3 Pos;
-	XMFLOAT4 Color;
-	XMFLOAT4 Normal;
+	glm::vec3 Pos;
+	glm::vec4 Color;
+	glm::vec4 Normal;
 };
 
 struct FMeshData

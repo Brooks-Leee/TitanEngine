@@ -144,9 +144,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Application.h" />
+    <ClInclude Include="Camera.h" />
     <ClInclude Include="Scene.h" />
-    <ClInclude Include="BoxApp.h" />
-    <ClInclude Include="d3dApp.h" />
+    <ClInclude Include="AppDraw.h" />
+    <ClInclude Include="AppInit.h" />
     <ClInclude Include="d3dUtil.h" />
     <ClInclude Include="d3dx12.h" />
     <ClInclude Include="GameTimer.h" />
@@ -154,12 +155,14 @@
     <ClInclude Include="StaticMesh.h" />
     <ClInclude Include="MathHelper.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="TitanEngine.h" />
     <ClInclude Include="UploadBuffer.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Scene.cpp" />
-    <ClCompile Include="BoxApp.cpp" />
-    <ClCompile Include="d3dApp.cpp" />
+    <ClCompile Include="AppDraw.cpp" />
+    <ClCompile Include="AppInit.cpp" />
     <ClCompile Include="d3dUtil.cpp" />
     <ClCompile Include="GameTimer.cpp" />
     <ClCompile Include="MathHelper.cpp" />
@@ -167,6 +170,7 @@
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="TitanEngine.cpp" />
     <ClCompile Include="WinMain.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
