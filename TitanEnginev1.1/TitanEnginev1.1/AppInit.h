@@ -6,6 +6,7 @@
 #endif
 
 #include "Application.h"
+#include "Camera.h"
 
 //#include "d3dUtil.h"
 //#include "GameTimer.h"
@@ -37,7 +38,7 @@ public:
     void Set4xMsaaState(bool value);
 
     virtual int Run() override;
- 
+    Camera camera;
     virtual LRESULT MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 protected:
@@ -120,5 +121,6 @@ protected:
     DXGI_FORMAT mDepthStencilFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	int mClientWidth = 800;
 	int mClientHeight = 600;
+
 };
 

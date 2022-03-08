@@ -1,11 +1,11 @@
 # TitanEngine
 
-#### 	This repo used to manage the second stage of our courses which is the Rendering part.
-
 #### V1.2
 
 1. 实现场景绘制
 2. shader中增加法线
+3. 封装相机
+4. 实现WPO
 
 #### TitanEngine V1.1
 

@@ -356,6 +356,38 @@ LRESULT AppInit::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	case WM_MOUSEMOVE:
 		OnMouseMove(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 		return 0;
+	case WM_MOUSEWHEEL:
+		if (GET_WHEEL_DELTA_WPARAM(wParam) > 0) {
+			mApp->camera.AddCameraSpeed(10);
+		}
+		else
+		{
+			mApp->camera.AddCameraSpeed(-10);
+		}
+		return 0;
+	case WM_KEYDOWN:
+		if ((int)wParam == VK_F2) {
+			mApp->Set4xMsaaState(!mApp->Get4xMsaaState());
+		}
+		else if (wParam == 'A') {
+			mApp->camera.Strafe(-1.0f * (mApp->camera.GetCameraSpeed()));
+		}
+		else if (wParam == 'S') {
+			mApp->camera.Walk(-1.0f * (mApp->camera.GetCameraSpeed()));
+		}
+		else if (wParam == 'D') {
+			mApp->camera.Strafe(1.0f * (mApp->camera.GetCameraSpeed()));
+		}
+		else if (wParam == 'W') {
+			mApp->camera.Walk(1.0f * (mApp->camera.GetCameraSpeed()));
+		}
+		else if (wParam == 'E') {
+			mApp->camera.UpDown(1.0f * (mApp->camera.GetCameraSpeed()));
+		}
+		else if (wParam == 'Q') {
+			mApp->camera.UpDown(-1.0f * (mApp->camera.GetCameraSpeed()));
+		}
+		return 0;
     case WM_KEYUP:
         if(wParam == VK_ESCAPE)
         {

@@ -49,11 +49,10 @@ void AppDraw::OnResize()
 {
 	AppInit::OnResize();
 
-    // The window resized, so update the aspect ratio and recompute the projection matrix.
-	
-	glm::mat4x4 P = glm::perspectiveFovLH(0.25f * MathHelper::Piglm, (float)mClientWidth, (float)mClientHeight, 1.0f, 10000.0f);
-   // XMMATRIX P = XMMatrixPerspectiveFovLH(0.25f*MathHelper::Pi, AspectRatio(), 1.0f, 10000.0f);
-	mProj = P;
+	//glm::mat4x4 P = glm::perspectiveFovLH(0.25f * MathHelper::Piglm, (float)mClientWidth, (float)mClientHeight, 1.0f, 10000.0f);
+	camera.SetCameraPos(1000.0f, 2000.0f, 2000.0f);
+	camera.SetLens(0.25f * MathHelper::Piglm, static_cast<float>(mClientWidth) / mClientHeight, 1.0f, 10000.0f);
+	camera.LookAt(camera.GetCameraPos3f(), glm::vec3(0.0f, 0.0f, 0.0f), camera.GetUp());
 }
 
 void AppDraw::Update(const GameTimer& gt)
@@ -61,50 +60,10 @@ void AppDraw::Update(const GameTimer& gt)
 	ObjectConstants objConstants;
 	for (int i = 0; i < mGeoArr.size(); i++)
 	{
-		// Convert Spherical to Cartesian coordinates.
-		float x = mRadius * sinf(mPhi) * cosf(mTheta);
-		float z = mRadius * sinf(mPhi) * sinf(mTheta);
-		float y = mRadius * cosf(mPhi);
+		camera.UpdateViewMat();
 
-		// Build the view matrix.
-		/*XMVECTOR pos = XMVectorSet(x, y, z, 1.0f);
-		XMVECTOR target = XMVectorZero();
-		XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);*/
-
-		/*glm::vec4 pos = glm::vec4(x, y, z, 1.0f);
-		glm::vec4 target = MathHelper::glmVecZero();
-		glm::vec4 up = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);*/
-
-		glm::vec3 pos = glm::vec3(x, y, z);
-		glm::vec3 target = glm::vec3(0.0f, 0.0f, 0.0f);
-		glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-
-		glm::mat4 view = glm::lookAtLH(pos, target, up);
-		//XMMATRIX view = XMMatrixLookAtLH(pos, target, up);
-		//XMStoreFloat4x4(&mView, view);
-		mView = view;
-
-	//	XMMatrixRotationQuaternion()
-		/*auto scale = XMMatrixScaling(
-			mAllActor->SceneDataArr[i].Transform.scale.x,
-			mAllActor->SceneDataArr[i].Transform.scale.y,
-			mAllActor->SceneDataArr[i].Transform.scale.z
-		);
-
-
-
-		DirectX::XMVECTORF32 XMRotation = { { {
-				mAllActor->SceneDataArr[i].Transform.rotation.pitch,
-				mAllActor->SceneDataArr[i].Transform.rotation.yaw,
-				mAllActor->SceneDataArr[i].Transform.rotation.roll,
-				mAllActor->SceneDataArr[i].Transform.rotation.w
-			} } };
-		auto rotation = XMMatrixRotationQuaternion(XMRotation);
-		auto location = XMMatrixTranslation(
-			mAllActor->SceneDataArr[i].Transform.location.x,
-			mAllActor->SceneDataArr[i].Transform.location.y,
-			mAllActor->SceneDataArr[i].Transform.location.z
-		);*/
+		mView = camera.GetView4x4();
+		mProj = camera.GetProj4x4();
 
 		auto scalev = glm::vec3(
 			mAllActor->SceneDataArr[i].Transform.scale.x,
@@ -128,7 +87,7 @@ void AppDraw::Update(const GameTimer& gt)
 		auto location = glm::translate(MathHelper::Identity4x4glm(), locationv);
 
 		glm::mat4 world = scale * rotation * location;
-
+		glm::mat4 view = mView;
 		glm::mat4 proj = mProj;
 
 		//XMMATRIX world = scale * rotation * location;
@@ -236,26 +195,19 @@ void AppDraw::OnMouseMove(WPARAM btnState, int x, int y)
     if((btnState & MK_LBUTTON) != 0)
     {
         // Make each pixel correspond to a quarter of a degree.
-        float dx = XMConvertToRadians(0.25f*static_cast<float>(mLastMousePos.x - x));
-        float dy = XMConvertToRadians(0.25f*static_cast<float>(mLastMousePos.y - y));
+        float dx = XMConvertToRadians(0.25f*static_cast<float>(x - mLastMousePos.x));
+        float dy = XMConvertToRadians(0.25f*static_cast<float>(y - mLastMousePos.y));
 
         // Update angles based on input to orbit camera around box.
-        mTheta += dx;
-        mPhi += dy;
-
-        // Restrict the angle mPhi.
-        mPhi = MathHelper::Clamp(mPhi, 0.1f, MathHelper::Piglm - 0.1f);
+		camera.RotateY(dx);
+		camera.Pitch(dy);
     }
     else if((btnState & MK_RBUTTON) != 0)
     {
-        float dx = 0.5f*static_cast<float>(x - mLastMousePos.x);
-        float dy = 0.5f*static_cast<float>(y - mLastMousePos.y);
-
-        // Update the camera radius based on input.
-        mRadius += dx - dy;
-
-        // Restrict the radius.
-        ////mRadius = MathHelper::Clamp(mRadius, 3.0f, 15.0f);
+		float dx = XMConvertToRadians(0.25f * static_cast<float>(x - mLastMousePos.x));
+		float dy = XMConvertToRadians(0.25f * static_cast<float>(y - mLastMousePos.y));
+		camera.RotateY(dx);
+		camera.Pitch(dy);
     }
 
     mLastMousePos.x = x;
