@@ -11,6 +11,9 @@ struct ObjectConstants
 {
 	glm::mat4x4 WorldViewProj = MathHelper::Identity4x4glm();
 	float gTime;
+	glm::mat4x4 Location;
+	glm::mat4x4 Rotation;
+	glm::mat4x4 Scale;
 };
 
 class AppDraw : public AppInit

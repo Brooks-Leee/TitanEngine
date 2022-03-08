@@ -1,8 +1,6 @@
 #pragma once
 #include "MyMath.h"
-#include <DirectXMath.h>
 
-using namespace DirectX;
 
 struct Vertex
 {

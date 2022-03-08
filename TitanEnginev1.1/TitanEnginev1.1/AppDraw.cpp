@@ -70,11 +70,12 @@ void AppDraw::Update(const GameTimer& gt)
 			mAllActor->SceneDataArr[i].Transform.scale.y,
 			mAllActor->SceneDataArr[i].Transform.scale.z
 		);
+	//	glm::mat4_cast(rotationv)
 		auto rotationv = glm::quat(
+			mAllActor->SceneDataArr[i].Transform.rotation.w,
 			mAllActor->SceneDataArr[i].Transform.rotation.pitch,
 			mAllActor->SceneDataArr[i].Transform.rotation.yaw,
-			mAllActor->SceneDataArr[i].Transform.rotation.roll,
-			mAllActor->SceneDataArr[i].Transform.rotation.w
+			mAllActor->SceneDataArr[i].Transform.rotation.roll
 		);
 		auto locationv = glm::vec3(
 			mAllActor->SceneDataArr[i].Transform.location.x,
@@ -86,17 +87,25 @@ void AppDraw::Update(const GameTimer& gt)
 		auto rotation = glm::mat4_cast(rotationv);
 		auto location = glm::translate(MathHelper::Identity4x4glm(), locationv);
 
-		glm::mat4 world = scale * rotation * location;
+		glm::mat4 world = location * rotation * scale;
+
 		glm::mat4 view = mView;
 		glm::mat4 proj = mProj;
 
 		//XMMATRIX world = scale * rotation * location;
 //		XMMATRIX world = XMLoadFloat4x4(&mWorld);
 		//XMMATRIX proj = XMLoadFloat4x4(&mProj);
+		//glm::mat4 worldViewProj = proj * view * world;
 		glm::mat4 worldViewProj = proj * view * world;
+
+
+
 
 		objConstants.WorldViewProj = glm::transpose(worldViewProj);
 		objConstants.gTime = gt.TotalTime();
+		objConstants.Location = location;
+		objConstants.Rotation = rotation;
+		objConstants.Scale = scale;
 		mObjectCB->CopyData(i, objConstants);
 
 		// Update the constant buffer with the latest worldViewProj matrix.
@@ -125,9 +134,9 @@ void AppDraw::Draw(const GameTimer& gt)
     // Indicate a state transition on the resource usage.
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
 		D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
-
+	float rtvColor[4] = { 1.0f, 0.9f, 0.8f, 1.0f };
     // Clear the back buffer and depth buffer.
-    mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::LightSteelBlue, 0, nullptr);
+    mCommandList->ClearRenderTargetView(CurrentBackBufferView(), rtvColor, 0, nullptr);
     mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 	
     // Specify the buffers we are going to render to.
@@ -194,18 +203,18 @@ void AppDraw::OnMouseMove(WPARAM btnState, int x, int y)
 {
     if((btnState & MK_LBUTTON) != 0)
     {
-        // Make each pixel correspond to a quarter of a degree.
-        float dx = XMConvertToRadians(0.25f*static_cast<float>(x - mLastMousePos.x));
-        float dy = XMConvertToRadians(0.25f*static_cast<float>(y - mLastMousePos.y));
+		float dx = glm::radians(0.25f * static_cast<float>(x - mLastMousePos.x));
+		float dy = glm::radians(0.25f * static_cast<float>(y - mLastMousePos.y));
+       // float dx = XMConvertToRadians(0.25f*static_cast<float>(x - mLastMousePos.x));
+        //float dy = XMConvertToRadians(0.25f*static_cast<float>(y - mLastMousePos.y));
 
-        // Update angles based on input to orbit camera around box.
 		camera.RotateY(dx);
 		camera.Pitch(dy);
     }
     else if((btnState & MK_RBUTTON) != 0)
     {
-		float dx = XMConvertToRadians(0.25f * static_cast<float>(x - mLastMousePos.x));
-		float dy = XMConvertToRadians(0.25f * static_cast<float>(y - mLastMousePos.y));
+		float dx = glm::radians(0.25f * static_cast<float>(x - mLastMousePos.x));
+		float dy = glm::radians(0.25f * static_cast<float>(y - mLastMousePos.y));
 		camera.RotateY(dx);
 		camera.Pitch(dy);
     }

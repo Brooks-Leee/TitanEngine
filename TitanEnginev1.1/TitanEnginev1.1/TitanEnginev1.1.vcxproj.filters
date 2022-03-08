@@ -57,6 +57,12 @@
     <ClInclude Include="Camera.h">
       <Filter>Public</Filter>
     </ClInclude>
+    <ClInclude Include="Window.h">
+      <Filter>Public</Filter>
+    </ClInclude>
+    <ClInclude Include="ResourceManager.h">
+      <Filter>Public</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AppInit.cpp">
@@ -90,6 +96,12 @@
       <Filter>Private</Filter>
     </ClCompile>
     <ClCompile Include="Camera.cpp">
+      <Filter>Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Window.cpp">
+      <Filter>Private</Filter>
+    </ClCompile>
+    <ClCompile Include="ResourceManager.cpp">
       <Filter>Private</Filter>
     </ClCompile>
   </ItemGroup>
