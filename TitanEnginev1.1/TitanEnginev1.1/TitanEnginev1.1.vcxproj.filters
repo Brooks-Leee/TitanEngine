@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AppInit.h">
-      <Filter>Public</Filter>
-    </ClInclude>
     <ClInclude Include="d3dUtil.h">
       <Filter>Public</Filter>
     </ClInclude>
@@ -37,9 +34,6 @@
       <Filter>Public</Filter>
     </ClInclude>
     <ClInclude Include="StaticMesh.h">
-      <Filter>Public</Filter>
-    </ClInclude>
-    <ClInclude Include="AppDraw.h">
       <Filter>Public</Filter>
     </ClInclude>
     <ClInclude Include="MyMath.h">
@@ -80,9 +74,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AppInit.cpp">
-      <Filter>Private</Filter>
-    </ClCompile>
     <ClCompile Include="d3dUtil.cpp">
       <Filter>Private</Filter>
     </ClCompile>
@@ -90,9 +81,6 @@
       <Filter>Private</Filter>
     </ClCompile>
     <ClCompile Include="MathHelper.cpp">
-      <Filter>Private</Filter>
-    </ClCompile>
-    <ClCompile Include="AppDraw.cpp">
       <Filter>Private</Filter>
     </ClCompile>
     <ClCompile Include="stdafx.cpp">
