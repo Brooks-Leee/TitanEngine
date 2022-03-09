@@ -1,5 +1,43 @@
 #include "stdafx.h"
 #include "Camera.h"
+#include "Input.h"
+
+
+float dt = 3.0f;
+
+POINT LastMousePos;
+
+
+
+void Camera::Update()
+{
+	if (Input::mIsMouseDown)
+	{
+		float dx = glm::radians(0.25f * static_cast<float>(Input::mCurrentMousePos.x - LastMousePos.x));
+		float dy = glm::radians(0.25f * static_cast<float>(Input::mCurrentMousePos.y - LastMousePos.y));
+		RotateY(dx);
+		Pitch(dy);
+	}
+
+	LastMousePos.x = Input::mCurrentMousePos.x;
+	LastMousePos.y = Input::mCurrentMousePos.y;
+
+	if (GetAsyncKeyState('W') & 0x8000)
+		Walk(10.0f * dt);
+	if (GetAsyncKeyState('A') & 0x8000)
+		Strafe(-10.0f * dt);
+	if (GetAsyncKeyState('S') & 0x8000)
+		Walk(-10.0f * dt);
+	if (GetAsyncKeyState('D') & 0x8000)
+		Strafe(10.0f * dt);
+	if (GetAsyncKeyState('Q') & 0x8000)
+		UpDown(10.0f * dt);
+	if (GetAsyncKeyState('E') & 0x8000)
+		UpDown(-10.0f * dt);
+}
+
+
+
 
 void Camera::Strafe(float d)
 {
@@ -63,25 +101,6 @@ glm::vec3 Camera::VectorMultiplyAdd(glm::vec3 MultiplyV1, glm::vec3 MultiplyV2, 
 void Camera::RotateY(float angle)
 {
 	glm::mat4x4 M = glm::identity<glm::mat4x4>();
-	//M[0][0] = cosf(angle);
-	//M[0][1] = 0.0f;
-	//M[0][2] = -sinf(angle);
-	//M[0][3] = 0.0f;
-
-	//M[1][0] = 0.0f;
-	//M[1][1] = 1.0f;
-	//M[1][2] = 0.0f;
-	//M[1][3] = 0.0f;
-
-	//M[2][0] = sinf(angle);
-	//M[2][1] = 0.0f;
-	//M[2][2] = cosf(angle);
-	//M[2][3] = 0.0f;
-
-	//M[3][0] = 0.0f;
-	//M[3][1] = 0.0f;
-	//M[3][2] = 0.0f;
-	//M[3][3] = 1.0f;
 
 	M = glm::rotate(M, angle, glm::vec3(0.0f, 0.0f, 1.0f));
 	mRight = glm::normalize(Transform(M, mRight));
@@ -151,6 +170,8 @@ Camera::Camera()
 Camera::~Camera()
 {
 }
+
+
 
 
 glm::vec3 Camera::GetCameraPos3f() const

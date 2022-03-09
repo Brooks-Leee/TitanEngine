@@ -75,6 +75,9 @@
     <ClInclude Include="Input.h">
       <Filter>Public</Filter>
     </ClInclude>
+    <ClInclude Include="WinInput.h">
+      <Filter>Public</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AppInit.cpp">
@@ -126,6 +129,9 @@
       <Filter>Private</Filter>
     </ClCompile>
     <ClCompile Include="Input.cpp">
+      <Filter>Private</Filter>
+    </ClCompile>
+    <ClCompile Include="WinInput.cpp">
       <Filter>Private</Filter>
     </ClCompile>
   </ItemGroup>

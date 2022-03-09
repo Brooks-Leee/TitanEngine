@@ -163,6 +163,7 @@
     <ClInclude Include="UploadBuffer.h" />
     <ClInclude Include="Win32Window.h" />
     <ClInclude Include="Window.h" />
+    <ClInclude Include="WinInput.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
@@ -183,6 +184,7 @@
     <ClCompile Include="TitanEngine.cpp" />
     <ClCompile Include="Win32Window.cpp" />
     <ClCompile Include="Window.cpp" />
+    <ClCompile Include="WinInput.cpp" />
     <ClCompile Include="WinMain.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

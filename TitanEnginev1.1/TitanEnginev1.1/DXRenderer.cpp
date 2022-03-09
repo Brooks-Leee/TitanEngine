@@ -31,36 +31,18 @@ void DXRenderer::Update(const GameTimer & gt)
 		mView = camera.GetView4x4();
 		mProj = camera.GetProj4x4();
 
-		auto scalev = glm::vec3(
-			mAllActor->SceneDataArr[i].Transform.scale.x,
-			mAllActor->SceneDataArr[i].Transform.scale.y,
-			mAllActor->SceneDataArr[i].Transform.scale.z
-		);
-		//	glm::mat4_cast(rotationv)
-		auto rotationv = glm::quat(
-			mAllActor->SceneDataArr[i].Transform.rotation.w,
-			mAllActor->SceneDataArr[i].Transform.rotation.pitch,
-			mAllActor->SceneDataArr[i].Transform.rotation.yaw,
-			mAllActor->SceneDataArr[i].Transform.rotation.roll
-		);
-		auto locationv = glm::vec3(
-			mAllActor->SceneDataArr[i].Transform.location.x,
-			mAllActor->SceneDataArr[i].Transform.location.y,
-			mAllActor->SceneDataArr[i].Transform.location.z
-		);
+		auto& t = mAllActor->SceneDataArr[i].Transform;
+		auto& s = t.scale;
+		auto& r = t.rotation;
+		auto& l = t.location;
 
-		auto scale = glm::scale(MathHelper::Identity4x4glm(), scalev);
-		auto rotation = glm::mat4_cast(rotationv);
-		auto location = glm::translate(MathHelper::Identity4x4glm(), locationv);
+		auto scale = glm::scale(MathHelper::Identity4x4glm(), glm::vec3(s.x, s.y, s.z));
+		auto rotation = glm::mat4_cast(glm::quat(r.w, r.pitch, r.yaw, r.roll));
+		auto location = glm::translate(MathHelper::Identity4x4glm(), glm::vec3(l.x, l.y, l.z));
 
 		glm::mat4 world = location * rotation * scale;
 		glm::mat4 view = mView;
 		glm::mat4 proj = mProj;
-
-		//XMMATRIX world = scale * rotation * location;
-//		XMMATRIX world = XMLoadFloat4x4(&mWorld);
-		//XMMATRIX proj = XMLoadFloat4x4(&mProj);
-		//glm::mat4 worldViewProj = proj * view * world;
 		glm::mat4 worldViewProj = proj * view * world;
 
 		objConstants.WorldViewProj = glm::transpose(worldViewProj);
@@ -240,6 +222,8 @@ void DXRenderer::OnResize()
 	camera.SetCameraPos(1000.0f, 2000.0f, 2000.0f);
 	camera.SetLens(0.25f * MathHelper::Piglm, static_cast<float>(mClientWidth) / mClientHeight, 1.0f, 10000.0f);
 	camera.LookAt(camera.GetCameraPos3f(), glm::vec3(0.0f, 0.0f, 0.0f), camera.GetUp());
+
+	mProj = glm::perspectiveFovLH(0.25f * MathHelper::Piglm, (float)mClientWidth, (float)mClientHeight, 1.0f, 10000.0f);
 }
 
 void DXRenderer::CreateRtvAndDsvDescriptorHeaps()
@@ -482,7 +466,6 @@ void DXRenderer::BuildShadersAndInputLayout()
 	/*mvsByteCodeWPO = d3dUtil::CompileShader(L"Assets\\Shaders\\WPO.hlsl", nullptr, "VS", "vs_5_0");
 	mpsByteCodeWPO = d3dUtil::CompileShader(L"Assets\\Shaders\\WPO.hlsl", nullptr, "PS", "vs_5_0");*/
 
-
 	mInputLayout =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
@@ -493,15 +476,16 @@ void DXRenderer::BuildShadersAndInputLayout()
 
 void DXRenderer::BuildGeometry()
 {
-
+	
 	/*const char* FilePath = "Assets\\Map\\Map.titan";
 	mAllActor->LoadAllActorInMap(FilePath);*/
-
+	auto AllMeshData = TitanEngine::Get()->GetResourceMgr()->AllMeshData;
 
 	for (auto actor : mAllActor->SceneDataArr)
 	{
+		mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSO.Get());
 		std::vector<Vertex> vertices;
-		auto meshData = mAllActor->AllMeshData.find(actor.AssetPath);
+		auto meshData = AllMeshData.find(actor.AssetPath);
 		//auto meshData = 
 		size_t verticesLen = meshData->second->Vertices.size();
 		vertices.resize(verticesLen);
@@ -525,8 +509,6 @@ void DXRenderer::BuildGeometry()
 		std::vector<uint32_t> indices;
 		indices.resize(meshData->second->indices.size());
 		indices = meshData->second->indices;
-
-
 
 		std::shared_ptr<MeshGeometry> Geo = std::make_shared<MeshGeometry>();
 		//	MeshGeometry* Geo = new MeshGeometry;
@@ -560,7 +542,13 @@ void DXRenderer::BuildGeometry()
 
 		Geo->DrawArgs[actor.AssetPath] = submesh;
 
+
 		mGeoArr.push_back(Geo);
+
+		ThrowIfFailed(mCommandList->Close());
+
+		ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
+		mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 	}
 }
 

@@ -8,7 +8,7 @@ void Game::Init()
 
 }
 
-void Game::LoadAllActorInMap(std::string FilePath)
+void Game::LoadAllActorInMap(const std::string& FilePath)
 {
 	TitanEngine::Get()->GetResourceMgr()->LoadAllActorInMap(FilePath);
 }

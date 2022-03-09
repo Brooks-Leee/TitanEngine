@@ -21,3 +21,4 @@ void Window::Destroy(Window* window)
 {
 	delete window;
 }
+

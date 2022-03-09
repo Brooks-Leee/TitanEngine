@@ -34,7 +34,8 @@ bool TitanEngine::Run()
 	isRunning = true;
 	mTimer.Reset();
 
-	if (isRunning && WindowIns->Run())
+	while (isRunning && WindowIns->Run())
+	//if (isRunning)
 	{
 		mTimer.Tick();
 		RenderTick();
@@ -51,6 +52,7 @@ void TitanEngine::Destroy()
 void TitanEngine::RenderTick()
 {
 	Renderer->CalculateFrameStats();
+	Renderer->camera.Update();
 	Renderer->Update(mTimer);
 	Renderer->Draw(mTimer);
 }

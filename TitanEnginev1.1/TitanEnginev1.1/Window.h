@@ -8,7 +8,6 @@ public:
 	virtual bool initWindow() = 0;
 	virtual bool Run() = 0;
 	void Destroy(Window* window);
-	
 
 public:
 	int mClientWidth = 800;

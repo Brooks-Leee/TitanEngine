@@ -28,7 +28,7 @@ VertexOut VS(VertexIn vin)
 
 	//float4 Normal = mul(vin.Normal, gRotation);
 	float3 Pos = vin.PosL;
-//	Pos.z += sin(gTime%10)* 1000;s
+	Pos.z += sin(gTime%10)* 1000;
 
 	vout.PosH = mul(float4(Pos, 1.0f), gWorldViewProj);
 
@@ -39,6 +39,7 @@ VertexOut VS(VertexIn vin)
 
   //  vout.Color = (vout.Normal*0.5f+0.5f);
     vout.Color = (vin.Normal*0.5f+0.5f);
+	vout.Color = pow(vout.Color, 1/2.2f);
     //vout.Color = vin.Color;
     return vout;
 }

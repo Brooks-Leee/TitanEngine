@@ -2,8 +2,6 @@
 #include "ResourceManager.h"
 
 
-
-
 void ResourceManager::LoadAllActorInMap(const std::string& FilePath)
 {
 

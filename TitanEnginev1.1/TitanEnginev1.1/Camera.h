@@ -4,6 +4,8 @@ public:
 	Camera();
 	~Camera();
 
+	void Update();
+
 	glm::vec3 GetCameraPos3f() const;
 	void SetCameraPos(float x, float y, float z);
 	void SetCameraPos(const glm::vec3& Pos);

@@ -15,6 +15,5 @@ class Scene
 public:
 	FSceneData SceneData;
 	std::vector<FSceneData> SceneDataArr;
-	std::map<std::string, FMeshData*> AllMeshData;
 };
 
