@@ -13,9 +13,6 @@ struct FSceneData
 class Scene
 {
 public:
-	void LoadAllActorInMap(const std::string& FilePath);
-
-public:
 	FSceneData SceneData;
 	std::vector<FSceneData> SceneDataArr;
 	std::map<std::string, FMeshData*> AllMeshData;

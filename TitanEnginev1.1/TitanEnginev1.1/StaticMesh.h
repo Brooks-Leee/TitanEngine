@@ -25,10 +25,8 @@ struct FMeshData
 class StaticMesh
 {
 public:
-	void LoadBinaryFile(const std::string& FilePath);
 	FMeshData* GetStaticMesh();
 
-
-private:
+public:
 	FMeshData StaticMeshInfo;
 };

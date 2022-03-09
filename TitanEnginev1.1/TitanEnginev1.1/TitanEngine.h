@@ -1,16 +1,19 @@
 #pragma once
-
+#include "Window.h"
+#include "Scene.h"
+#include "ResourceManager.h"
+#include "DXRenderer.h"
 
 
 class TitanEngine
 {
-private:
+public:
 	static TitanEngine* s_engine;
 
 
 private:
-	TitanEngine() {};
-	~TitanEngine() {};
+	TitanEngine();
+	~TitanEngine();
 	TitanEngine(const TitanEngine&);
 
 public:
@@ -20,9 +23,24 @@ public:
 
 
 public:
-	bool Init(HINSTANCE hInstance);
-	void Loop();
+	bool Init();
+	bool Run();
 	void Destroy();
+
+	void RenderTick();
+
+	std::shared_ptr<ResourceManager> GetResourceMgr();
+	Window* GetWindowIns();
+	Scene* GetSceneIns();
+	DXRenderer* GetRenderer();
+
+protected:
+	Window* WindowIns;
+	std::shared_ptr<ResourceManager> ResourceMgr =  std::make_shared<ResourceManager>();
+	Scene* SceneIns;
+	DXRenderer* Renderer;
+	GameTimer mTimer;
+	bool isRunning;
 
 };
 

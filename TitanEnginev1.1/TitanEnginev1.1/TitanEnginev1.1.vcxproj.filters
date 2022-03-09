@@ -63,6 +63,18 @@
     <ClInclude Include="ResourceManager.h">
       <Filter>Public</Filter>
     </ClInclude>
+    <ClInclude Include="Game.h">
+      <Filter>Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Win32Window.h">
+      <Filter>Public</Filter>
+    </ClInclude>
+    <ClInclude Include="DXRenderer.h">
+      <Filter>Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Input.h">
+      <Filter>Public</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AppInit.cpp">
@@ -102,6 +114,18 @@
       <Filter>Private</Filter>
     </ClCompile>
     <ClCompile Include="ResourceManager.cpp">
+      <Filter>Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Game.cpp">
+      <Filter>Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Win32Window.cpp">
+      <Filter>Private</Filter>
+    </ClCompile>
+    <ClCompile Include="DXRenderer.cpp">
+      <Filter>Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Input.cpp">
       <Filter>Private</Filter>
     </ClCompile>
   </ItemGroup>

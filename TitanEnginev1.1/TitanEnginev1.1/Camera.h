@@ -26,8 +26,6 @@ public:
 	float GetFarWindowHeight() const;
 
 	void SetLens(float FovY, float aspect, float nearZ, float farZ);
-
-
 	void LookAt(glm::vec3 pos, glm::vec3 target, glm::vec3 worldUp);
 
 
