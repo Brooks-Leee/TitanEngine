@@ -19,6 +19,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
 		game.Run();
 	}
 
+	engine->Destroy();
+	game.Destroy();
 }
 
 

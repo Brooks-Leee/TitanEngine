@@ -17,3 +17,7 @@ void Game::Run()
 {
 
 }
+
+void Game::Destroy()
+{
+}

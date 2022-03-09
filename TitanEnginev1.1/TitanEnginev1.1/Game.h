@@ -10,6 +10,6 @@ public:
 
 	void Run();
 
-
+	void Destroy();
 };
 
