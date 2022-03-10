@@ -6,6 +6,7 @@ public:
 	static Window* Create();
 
 	virtual bool initWindow() = 0;
+	virtual void InitInput() = 0;
 	virtual bool Run() = 0;
 	void Destroy(Window* window);
 

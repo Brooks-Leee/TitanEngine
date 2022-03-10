@@ -12,15 +12,17 @@ TitanEngine* TitanEngine::s_engine = new TitanEngine;
 TitanEngine::TitanEngine()
 {
 	isRunning = false;
+	ResourceMgr = std::make_shared<ResourceManager>();
+	SceneIns = ResourceMgr->getScene();
 }
 
 TitanEngine::~TitanEngine()
 {
-	Destroy();
 }
 
 bool TitanEngine::Init()
 {
+
 	WindowIns = Window::Create();
 	WindowIns->initWindow();
 
@@ -35,7 +37,6 @@ bool TitanEngine::Run()
 	mTimer.Reset();
 
 	while (isRunning && WindowIns->Run())
-	//if (isRunning)
 	{
 		mTimer.Tick();
 		RenderTick();
@@ -46,13 +47,13 @@ bool TitanEngine::Run()
 void TitanEngine::Destroy()
 {
 	delete WindowIns;
+	WindowIns = nullptr;
 	delete Renderer;
+	Renderer = nullptr;
 }
 
 void TitanEngine::RenderTick()
 {
-	Renderer->CalculateFrameStats();
-	Renderer->camera.Update();
 	Renderer->Update(mTimer);
 	Renderer->Draw(mTimer);
 }
@@ -80,4 +81,9 @@ Scene* TitanEngine::GetSceneIns()
 DXRenderer* TitanEngine::GetRenderer()
 {
 	return Renderer;
+}
+
+GameTimer TitanEngine::GetTimer()
+{
+	return mTimer;
 }

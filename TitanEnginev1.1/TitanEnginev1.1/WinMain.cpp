@@ -11,8 +11,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
 	Game game = Game();
 	TitanEngine* engine = TitanEngine::Get();
 
-	game.Init();
 	engine->Init();
+	game.Init();
 
 	if (engine->Run())
 	{

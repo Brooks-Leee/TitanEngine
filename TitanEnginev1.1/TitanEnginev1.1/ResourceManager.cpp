@@ -1,10 +1,26 @@
 #include "stdafx.h"
 #include "ResourceManager.h"
+#include "TitanEngine.h"
 
+
+
+
+ResourceManager::ResourceManager()
+{
+	scene = new Scene;
+	staticMesh = new StaticMesh;
+}
+
+ResourceManager::~ResourceManager()
+{
+	delete scene;
+	scene = nullptr;
+	delete staticMesh;
+	staticMesh = nullptr;
+}
 
 void ResourceManager::LoadAllActorInMap(const std::string& FilePath)
 {
-
 	std::ifstream ifs(FilePath, std::ios::binary);
 	if (ifs.is_open())
 	{
@@ -80,4 +96,14 @@ StaticMesh* ResourceManager::LoadBinaryFile(const std::string& FilePath)
 	}
 	ifs.close();
 	return staticMesh;
+}
+
+std::map<std::string, FMeshData*> ResourceManager::getAllMeshData()
+{
+	return AllMeshData;
+}
+
+Scene* ResourceManager::getScene()
+{
+	return scene;
 }

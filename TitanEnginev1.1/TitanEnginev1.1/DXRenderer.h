@@ -36,6 +36,7 @@ public:
 	void FlushCommandQueue();
 
 
+	void UpdateScene();
 	void BuildDescriptorHeaps();
 	void BuildConstantBuffers();
 	void BuildRootSignature();
@@ -100,7 +101,7 @@ private:
 
 	std::unique_ptr<MeshGeometry> mGeo = nullptr;
 
-	Scene* mAllActor = nullptr; 
+	Scene* scene = nullptr; 
 	std::vector<std::shared_ptr<MeshGeometry>> mGeoArr;
 
 	ComPtr<ID3DBlob> mvsByteCode = nullptr;
@@ -121,6 +122,11 @@ private:
 	glm::mat4x4 mProj = MathHelper::Identity4x4glm();
 
 	POINT mLastMousePos;
+
+	int lastElementCount = 0;
+	int currentElementCount = 10;
+
+
 
 	FMeshData* mLoadedStruct;
 };

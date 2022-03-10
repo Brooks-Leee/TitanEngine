@@ -15,7 +15,7 @@ bool DXRenderer::Initialize()
 	BuildConstantBuffers();
 	BuildRootSignature();
 	BuildShadersAndInputLayout();
-	BuildGeometry();
+	//BuildGeometry();
 	BuildPSO();
 
 	return true;
@@ -31,7 +31,7 @@ void DXRenderer::Update(const GameTimer & gt)
 		mView = camera.GetView4x4();
 		mProj = camera.GetProj4x4();
 
-		auto& t = mAllActor->SceneDataArr[i].Transform;
+		auto& t = scene->SceneDataArr[i].Transform;
 		auto& s = t.scale;
 		auto& r = t.rotation;
 		auto& l = t.location;
@@ -64,7 +64,7 @@ void DXRenderer::Draw(const GameTimer& gt)
 	// A command list can be reset after it has been added to the command queue via ExecuteCommandList.
 	// Reusing the command list reuses memory.
 	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSO.Get()));
-
+	camera.Update();
 	mCommandList->RSSetViewports(1, &mScreenViewport);
 	mCommandList->RSSetScissorRects(1, &mScissorRect);
 
@@ -387,12 +387,20 @@ void DXRenderer::FlushCommandQueue()
 
 
 
+void DXRenderer::UpdateScene()
+{
+	scene = TitanEngine::Get()->GetSceneIns();
+	currentElementCount = (UINT)scene->SceneDataArr.size();
+	BuildDescriptorHeaps();
+	BuildConstantBuffers();
+	BuildGeometry();
+}
+
 void DXRenderer::BuildDescriptorHeaps()
 {
-	mAllActor = TitanEngine::Get()->GetResourceMgr()->scene;
 	D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc;
 	// NumDescriptors should be the Actor num
-	UINT DescriptorNum = (UINT)mAllActor->SceneDataArr.size();
+	UINT DescriptorNum = currentElementCount;
 	cbvHeapDesc.NumDescriptors = DescriptorNum;
 
 	cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
@@ -404,7 +412,7 @@ void DXRenderer::BuildDescriptorHeaps()
 
 void DXRenderer::BuildConstantBuffers()
 {
-	mObjectCB = std::make_unique<UploadBuffer<ObjectConstants>>(md3dDevice.Get(), mAllActor->SceneDataArr.size(), true);
+	mObjectCB = std::make_unique<UploadBuffer<ObjectConstants>>(md3dDevice.Get(), currentElementCount, true);
 
 	UINT DescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
@@ -412,7 +420,7 @@ void DXRenderer::BuildConstantBuffers()
 
 	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
 
-	for (int i = 0; i < mAllActor->SceneDataArr.size(); i++)
+	for (int i = 0; i < currentElementCount; i++)
 	{
 		D3D12_GPU_VIRTUAL_ADDRESS cbAddress = mObjectCB->Resource()->GetGPUVirtualAddress();
 		auto heapCPUHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(mCbvHeap->GetCPUDescriptorHandleForHeapStart());
@@ -479,9 +487,9 @@ void DXRenderer::BuildGeometry()
 	
 	/*const char* FilePath = "Assets\\Map\\Map.titan";
 	mAllActor->LoadAllActorInMap(FilePath);*/
-	auto AllMeshData = TitanEngine::Get()->GetResourceMgr()->AllMeshData;
+	auto AllMeshData = TitanEngine::Get()->GetResourceMgr()->getAllMeshData();
 
-	for (auto actor : mAllActor->SceneDataArr)
+	for (auto actor : scene->SceneDataArr)
 	{
 		mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSO.Get());
 		std::vector<Vertex> vertices;

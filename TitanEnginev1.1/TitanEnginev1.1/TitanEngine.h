@@ -33,10 +33,11 @@ public:
 	Window* GetWindowIns();
 	Scene* GetSceneIns();
 	DXRenderer* GetRenderer();
+	GameTimer GetTimer();
 
 protected:
 	Window* WindowIns;
-	std::shared_ptr<ResourceManager> ResourceMgr =  std::make_shared<ResourceManager>();
+	std::shared_ptr<ResourceManager> ResourceMgr;
 	Scene* SceneIns;
 	DXRenderer* Renderer;
 	GameTimer mTimer;

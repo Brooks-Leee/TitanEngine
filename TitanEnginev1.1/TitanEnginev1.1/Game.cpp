@@ -11,6 +11,7 @@ void Game::Init()
 void Game::LoadAllActorInMap(const std::string& FilePath)
 {
 	TitanEngine::Get()->GetResourceMgr()->LoadAllActorInMap(FilePath);
+	TitanEngine::Get()->GetRenderer()->UpdateScene();
 }
 
 void Game::Run()
