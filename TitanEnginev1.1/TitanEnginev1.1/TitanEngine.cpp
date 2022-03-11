@@ -13,11 +13,13 @@ TitanEngine::TitanEngine()
 {
 	isRunning = false;
 	ResourceMgr = std::make_shared<ResourceManager>();
-	SceneIns = ResourceMgr->getScene();
+	SceneIns = new Scene;
 }
 
 TitanEngine::~TitanEngine()
 {
+	delete SceneIns;
+	SceneIns = nullptr;
 }
 
 bool TitanEngine::Init()
@@ -39,6 +41,7 @@ bool TitanEngine::Run()
 	while (isRunning && WindowIns->Run())
 	{
 		mTimer.Tick();
+		SceneIns->camera.Update();
 		RenderTick();
 	}
 	return false;

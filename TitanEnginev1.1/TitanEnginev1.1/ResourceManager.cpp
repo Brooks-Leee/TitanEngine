@@ -7,20 +7,17 @@
 
 ResourceManager::ResourceManager()
 {
-	scene = new Scene;
-	staticMesh = new StaticMesh;
+
 }
 
 ResourceManager::~ResourceManager()
 {
-	delete scene;
-	scene = nullptr;
-	delete staticMesh;
-	staticMesh = nullptr;
+
 }
 
 void ResourceManager::LoadAllActorInMap(const std::string& FilePath)
 {
+	Scene* scene = TitanEngine::Get()->GetSceneIns();
 	std::ifstream ifs(FilePath, std::ios::binary);
 	if (ifs.is_open())
 	{
@@ -39,7 +36,6 @@ void ResourceManager::LoadAllActorInMap(const std::string& FilePath)
 
 			if (AllMeshData.find(scene->SceneData.AssetPath) == AllMeshData.end() )
 			{
-				//StaticMesh* staticMesh = new StaticMesh;
 				std::string FilePath = "Assets\\StaticMesh\\" + scene->SceneData.AssetPath;
 				StaticMesh* staticMesh = LoadBinaryFile(FilePath);
 				FMeshData* meshData = staticMesh->GetStaticMesh();
@@ -47,7 +43,6 @@ void ResourceManager::LoadAllActorInMap(const std::string& FilePath)
 
 			}
 		}
-		//mScene = scene;
 	}
 }
 
@@ -101,9 +96,4 @@ StaticMesh* ResourceManager::LoadBinaryFile(const std::string& FilePath)
 std::map<std::string, FMeshData*> ResourceManager::getAllMeshData()
 {
 	return AllMeshData;
-}
-
-Scene* ResourceManager::getScene()
-{
-	return scene;
 }

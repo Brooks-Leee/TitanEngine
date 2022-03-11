@@ -1,6 +1,6 @@
 #pragma once
 #include "StaticMesh.h"
-#include "Scene.h"
+#include <map>
 
 class ResourceManager
 {
@@ -14,11 +14,8 @@ public:
 
 
 	std::map<std::string, FMeshData*> getAllMeshData();
-	Scene* getScene();
 
 private:
-	Scene* scene;
-	StaticMesh* staticMesh;
 	std::map<std::string, FMeshData*> AllMeshData ;
 };
 

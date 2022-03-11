@@ -2,6 +2,8 @@
 #include "Input.h"
 #include "Win32Window.h"
 #include "DXRenderer.h"
+#include "TitanEngine.h"
+
 
 POINT Input::mCurrentMousePos;
 bool Input::mIsMouseDown;
@@ -11,6 +13,7 @@ void Input::OnMouseDown(WPARAM btnState, int x, int y)
 	mCurrentMousePos.x = x;
 	mCurrentMousePos.y = y;
 	mIsMouseDown = true;
+//	TitanEngine::Get()->GetSceneIns()->SpawnSphere();
 }
 
 void Input::OnMouseUp(WPARAM btnState, int x, int y)

@@ -41,7 +41,7 @@ protected:
 	Scene* SceneIns;
 	DXRenderer* Renderer;
 	GameTimer mTimer;
-	bool isRunning;
 
+	bool isRunning;
 };
 

@@ -9,8 +9,9 @@ bool DXRenderer::Initialize()
 	if (!InitDirect3D())
 		return false;
 
+	scene = TitanEngine::Get()->GetSceneIns();
 	OnResize();
-	
+
 	BuildDescriptorHeaps();
 	BuildConstantBuffers();
 	BuildRootSignature();
@@ -23,13 +24,14 @@ bool DXRenderer::Initialize()
 
 void DXRenderer::Update(const GameTimer & gt)
 {
+//	UpdateScene();
 	ObjectConstants objConstants;
 	for (int i = 0; i < mGeoArr.size(); i++)
 	{
-		camera.UpdateViewMat();
+		scene->camera.UpdateViewMat();
 
-		mView = camera.GetView4x4();
-		mProj = camera.GetProj4x4();
+		mView = scene->camera.GetView4x4();
+		mProj = scene->camera.GetProj4x4();
 
 		auto& t = scene->SceneDataArr[i].Transform;
 		auto& s = t.scale;
@@ -37,10 +39,12 @@ void DXRenderer::Update(const GameTimer & gt)
 		auto& l = t.location;
 
 		auto scale = glm::scale(MathHelper::Identity4x4glm(), glm::vec3(s.x, s.y, s.z));
-		auto rotation = glm::mat4_cast(glm::quat(r.w, r.pitch, r.yaw, r.roll));
+		auto rotation = glm::transpose(glm::mat4_cast(glm::quat(r.w, r.pitch, r.yaw, r.roll)));
 		auto location = glm::translate(MathHelper::Identity4x4glm(), glm::vec3(l.x, l.y, l.z));
 
+
 		glm::mat4 world = location * rotation * scale;
+		//glm::mat4 world = location * scale * rotation;
 		glm::mat4 view = mView;
 		glm::mat4 proj = mProj;
 		glm::mat4 worldViewProj = proj * view * world;
@@ -50,6 +54,7 @@ void DXRenderer::Update(const GameTimer & gt)
 		objConstants.Location = location;
 		objConstants.Rotation = rotation;
 		objConstants.Scale = scale;
+		// put the constant object into constant buffer which is a Upload Buffer
 		mObjectCB->CopyData(i, objConstants);
 	}
 }
@@ -64,7 +69,6 @@ void DXRenderer::Draw(const GameTimer& gt)
 	// A command list can be reset after it has been added to the command queue via ExecuteCommandList.
 	// Reusing the command list reuses memory.
 	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSO.Get()));
-	camera.Update();
 	mCommandList->RSSetViewports(1, &mScreenViewport);
 	mCommandList->RSSetScissorRects(1, &mScissorRect);
 
@@ -204,7 +208,7 @@ void DXRenderer::OnResize()
 	ThrowIfFailed(mCommandList->Close());
 	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
 	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-
+	
 	// Wait until resize is complete.
 	FlushCommandQueue();
 
@@ -219,32 +223,13 @@ void DXRenderer::OnResize()
 	mScissorRect = { 0, 0, mClientWidth, mClientHeight };
 
 
-	camera.SetCameraPos(1000.0f, 2000.0f, 2000.0f);
-	camera.SetLens(0.25f * MathHelper::Piglm, static_cast<float>(mClientWidth) / mClientHeight, 1.0f, 10000.0f);
-	camera.LookAt(camera.GetCameraPos3f(), glm::vec3(0.0f, 0.0f, 0.0f), camera.GetUp());
+	scene->camera.SetCameraPos(1000.0f, 2000.0f, 2000.0f);
+	scene->camera.SetLens(0.25f * MathHelper::Piglm, static_cast<float>(mClientWidth) / mClientHeight, 1.0f, 10000.0f);
+	scene->camera.LookAt(scene->camera.GetCameraPos3f(), glm::vec3(0.0f, 0.0f, 0.0f), scene->camera.GetUp());
 
 	mProj = glm::perspectiveFovLH(0.25f * MathHelper::Piglm, (float)mClientWidth, (float)mClientHeight, 1.0f, 10000.0f);
 }
 
-void DXRenderer::CreateRtvAndDsvDescriptorHeaps()
-{
-	D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc;
-	rtvHeapDesc.NumDescriptors = SwapChainBufferCount;
-	rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-	rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	rtvHeapDesc.NodeMask = 0;
-	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(
-		&rtvHeapDesc, IID_PPV_ARGS(mRtvHeap.GetAddressOf())));
-
-
-	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc;
-	dsvHeapDesc.NumDescriptors = 1;
-	dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-	dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	dsvHeapDesc.NodeMask = 0;
-	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(
-		&dsvHeapDesc, IID_PPV_ARGS(mDsvHeap.GetAddressOf())));
-}
 
 bool DXRenderer::InitDirect3D()
 {
@@ -317,7 +302,6 @@ void DXRenderer::CreateCommandObjects()
 	ThrowIfFailed(md3dDevice->CreateCommandAllocator(
 		D3D12_COMMAND_LIST_TYPE_DIRECT,
 		IID_PPV_ARGS(mDirectCmdListAlloc.GetAddressOf())));
-
 	ThrowIfFailed(md3dDevice->CreateCommandList(
 		0,
 		D3D12_COMMAND_LIST_TYPE_DIRECT,
@@ -330,7 +314,6 @@ void DXRenderer::CreateCommandObjects()
 	// calling Reset.
 	mCommandList->Close();
 }
-
 void DXRenderer::CreateSwapChain()
 {
 	// Release the previous swapchain we will be recreating.
@@ -361,6 +344,26 @@ void DXRenderer::CreateSwapChain()
 		&sd,
 		mSwapChain.GetAddressOf()));
 }
+void DXRenderer::CreateRtvAndDsvDescriptorHeaps()
+{
+	D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc;
+	rtvHeapDesc.NumDescriptors = SwapChainBufferCount;
+	rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+	rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	rtvHeapDesc.NodeMask = 0;
+	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(
+		&rtvHeapDesc, IID_PPV_ARGS(mRtvHeap.GetAddressOf())));
+
+
+	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc;
+	dsvHeapDesc.NumDescriptors = 1;
+	dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+	dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	dsvHeapDesc.NodeMask = 0;
+	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(
+		&dsvHeapDesc, IID_PPV_ARGS(mDsvHeap.GetAddressOf())));
+}
+
 
 void DXRenderer::FlushCommandQueue()
 {
@@ -386,10 +389,8 @@ void DXRenderer::FlushCommandQueue()
 }
 
 
-
 void DXRenderer::UpdateScene()
 {
-	scene = TitanEngine::Get()->GetSceneIns();
 	currentElementCount = (UINT)scene->SceneDataArr.size();
 	BuildDescriptorHeaps();
 	BuildConstantBuffers();
@@ -416,6 +417,7 @@ void DXRenderer::BuildConstantBuffers()
 
 	UINT DescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
+	// Constant buffers must be a multiple of the minimum hardware allocation size (usually 256 bytes)
 	UINT objCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
 
 	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
@@ -464,23 +466,6 @@ void DXRenderer::BuildRootSignature()
 		IID_PPV_ARGS(&mRootSignature)));
 }
 
-void DXRenderer::BuildShadersAndInputLayout()
-{
-	HRESULT hr = S_OK;
-
-	mvsByteCode = d3dUtil::CompileShader(L"Assets\\Shaders\\color.hlsl", nullptr, "VS", "vs_5_0");
-	mpsByteCode = d3dUtil::CompileShader(L"Assets\\Shaders\\color.hlsl", nullptr, "PS", "ps_5_0");
-
-	/*mvsByteCodeWPO = d3dUtil::CompileShader(L"Assets\\Shaders\\WPO.hlsl", nullptr, "VS", "vs_5_0");
-	mpsByteCodeWPO = d3dUtil::CompileShader(L"Assets\\Shaders\\WPO.hlsl", nullptr, "PS", "vs_5_0");*/
-
-	mInputLayout =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 28, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
-	};
-}
 
 void DXRenderer::BuildGeometry()
 {
@@ -488,10 +473,10 @@ void DXRenderer::BuildGeometry()
 	/*const char* FilePath = "Assets\\Map\\Map.titan";
 	mAllActor->LoadAllActorInMap(FilePath);*/
 	auto AllMeshData = TitanEngine::Get()->GetResourceMgr()->getAllMeshData();
+	mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSO.Get());
 
 	for (auto actor : scene->SceneDataArr)
 	{
-		mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSO.Get());
 		std::vector<Vertex> vertices;
 		auto meshData = AllMeshData.find(actor.AssetPath);
 		//auto meshData = 
@@ -504,7 +489,7 @@ void DXRenderer::BuildGeometry()
 			vertices[i].Pos.y = meshData->second->Vertices[i].y;
 			vertices[i].Pos.z = meshData->second->Vertices[i].z;
 
-			vertices[i].Color = glm::vec4(0.780f, 0.341f, 0.341f, 1.0f);
+			//vertices[i].Color = glm::vec4(0.780f, 0.341f, 0.341f, 1.0f);
 
 			//	vertices[i].Color = XMFLOAT4(Colors::Green);
 
@@ -553,19 +538,38 @@ void DXRenderer::BuildGeometry()
 
 		mGeoArr.push_back(Geo);
 
-		ThrowIfFailed(mCommandList->Close());
-
-		ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
-		mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 	}
+	ThrowIfFailed(mCommandList->Close());
+	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
+	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+}
+
+void DXRenderer::BuildShadersAndInputLayout()
+{
+	HRESULT hr = S_OK;
+
+	mvsByteCode = d3dUtil::CompileShader(L"Assets\\Shaders\\color.hlsl", nullptr, "VS", "vs_5_0");
+	mpsByteCode = d3dUtil::CompileShader(L"Assets\\Shaders\\color.hlsl", nullptr, "PS", "ps_5_0");
+
+	/*mvsByteCodeWPO = d3dUtil::CompileShader(L"Assets\\Shaders\\WPO.hlsl", nullptr, "VS", "vs_5_0");
+	mpsByteCodeWPO = d3dUtil::CompileShader(L"Assets\\Shaders\\WPO.hlsl", nullptr, "PS", "vs_5_0");*/
+
+	mInputLayout =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 28, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
+	};
 }
 
 void DXRenderer::BuildPSO()
 {
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
 	ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
+
 	psoDesc.InputLayout = { mInputLayout.data(), (UINT)mInputLayout.size() };
 	psoDesc.pRootSignature = mRootSignature.Get();
+
 	psoDesc.VS =
 	{
 		reinterpret_cast<BYTE*>(mvsByteCode->GetBufferPointer()),
@@ -576,6 +580,7 @@ void DXRenderer::BuildPSO()
 		reinterpret_cast<BYTE*>(mpsByteCode->GetBufferPointer()),
 		mpsByteCode->GetBufferSize()
 	};
+
 	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 	psoDesc.RasterizerState.FrontCounterClockwise = true;
 	psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
@@ -589,6 +594,9 @@ void DXRenderer::BuildPSO()
 	psoDesc.DSVFormat = mDepthStencilFormat;
 	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&mPSO)));
 }
+
+
+
 
 ID3D12Resource* DXRenderer::CurrentBackBuffer() const
 {
@@ -710,3 +718,6 @@ void DXRenderer::LogOutputDisplayModes(IDXGIOutput* output, DXGI_FORMAT format)
 		::OutputDebugString(text.c_str());
 	}
 }
+
+
+

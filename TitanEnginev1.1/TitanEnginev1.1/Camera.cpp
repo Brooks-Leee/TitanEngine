@@ -4,9 +4,7 @@
 
 
 float dt = 3.0f;
-
 POINT LastMousePos;
-
 
 
 void Camera::Update()

@@ -11,10 +11,10 @@ using namespace DirectX;
 struct ObjectConstants
 {
 	glm::mat4x4 WorldViewProj = MathHelper::Identity4x4glm();
-	float gTime;
 	glm::mat4x4 Location;
 	glm::mat4x4 Rotation;
 	glm::mat4x4 Scale;
+	float gTime;
 };
 
 class DXRenderer
@@ -89,7 +89,6 @@ public:
 	DXGI_FORMAT mDepthStencilFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	int mClientWidth = 800;
 	int mClientHeight = 600;
-	Camera camera;
 
 
 private:
