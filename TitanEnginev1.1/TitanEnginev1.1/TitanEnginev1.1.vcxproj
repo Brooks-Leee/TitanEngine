@@ -181,7 +181,7 @@
     <ClCompile Include="Win32Window.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="WinInput.cpp" />
-    <ClCompile Include="WinMain.cpp" />
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -122,8 +122,8 @@ private:
 
 	POINT mLastMousePos;
 
-	int lastElementCount = 0;
-	int currentElementCount = 10;
+	int mLastElementCount = 0;
+	int mCurrentElementCount = 10;
 
 
 

@@ -92,7 +92,7 @@
     <ClCompile Include="Scene.cpp">
       <Filter>Private</Filter>
     </ClCompile>
-    <ClCompile Include="WinMain.cpp">
+    <ClCompile Include="main.cpp">
       <Filter>Private</Filter>
     </ClCompile>
     <ClCompile Include="TitanEngine.cpp">

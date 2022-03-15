@@ -10,7 +10,7 @@ public:
 
 public:
 	void LoadAllActorInMap(const std::string& FilePath);
-	StaticMesh* LoadBinaryFile(const std::string& FilePath);
+	StaticMesh* LoadStaticMesh(const std::string& FilePath);
 
 
 	std::map<std::string, FMeshData*> getAllMeshData();

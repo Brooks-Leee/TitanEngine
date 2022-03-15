@@ -55,131 +55,6 @@
 			{
 				"rotation":
 				{
-					"x": 0,
-					"y": 0,
-					"z": 0,
-					"w": 1
-				},
-				"translation":
-				{
-					"x": -390,
-					"y": 280,
-					"z": 125
-				},
-				"scale3D":
-				{
-					"x": 1,
-					"y": 1,
-					"z": 1
-				}
-			},
-			"assetPath": "Linear_Stair_StaticMesh.titan"
-		},
-		{
-			"transform":
-			{
-				"rotation":
-				{
-					"x": 0,
-					"y": 0,
-					"z": 0,
-					"w": 1
-				},
-				"translation":
-				{
-					"x": 169,
-					"y": -40,
-					"z": 94
-				},
-				"scale3D":
-				{
-					"x": 1,
-					"y": 1,
-					"z": 1
-				}
-			},
-			"assetPath": "Bump_StaticMesh.titan"
-		},
-		{
-			"transform":
-			{
-				"rotation":
-				{
-					"x": 0,
-					"y": 0,
-					"z": 0,
-					"w": 1
-				},
-				"translation":
-				{
-					"x": -90,
-					"y": -40,
-					"z": 105
-				},
-				"scale3D":
-				{
-					"x": 1,
-					"y": 1,
-					"z": 1
-				}
-			},
-			"assetPath": "LeftArm_StaticMesh.titan"
-		},
-		{
-			"transform":
-			{
-				"rotation":
-				{
-					"x": 0,
-					"y": 0,
-					"z": 0,
-					"w": 1
-				},
-				"translation":
-				{
-					"x": -90,
-					"y": 210,
-					"z": 105
-				},
-				"scale3D":
-				{
-					"x": 1,
-					"y": 1,
-					"z": 1
-				}
-			},
-			"assetPath": "RightArm_StaticMesh.titan"
-		},
-		{
-			"transform":
-			{
-				"rotation":
-				{
-					"x": 0,
-					"y": 0,
-					"z": 0,
-					"w": 1
-				},
-				"translation":
-				{
-					"x": -90,
-					"y": -310,
-					"z": 105
-				},
-				"scale3D":
-				{
-					"x": 1,
-					"y": 1,
-					"z": 1
-				}
-			},
-			"assetPath": "Ramp_StaticMesh.titan"
-		},
-		{
-			"transform":
-			{
-				"rotation":
-				{
 					"x": -9.4830411399016157e-06,
 					"y": -9.4830393209122121e-06,
 					"z": -0.70710676908493042,
@@ -199,31 +74,6 @@
 				}
 			},
 			"assetPath": "1M_Cube.titan"
-		},
-		{
-			"transform":
-			{
-				"rotation":
-				{
-					"x": 0,
-					"y": 0,
-					"z": 0,
-					"w": 1
-				},
-				"translation":
-				{
-					"x": -290,
-					"y": -470,
-					"z": 194.6453857421875
-				},
-				"scale3D":
-				{
-					"x": 2,
-					"y": 2,
-					"z": 1.5
-				}
-			},
-			"assetPath": "1M_Cube_Chamfer.titan"
 		},
 		{
 			"transform":
@@ -314,7 +164,7 @@
 				{
 					"x": -670,
 					"y": -40,
-					"z": 130
+					"z": 110
 				},
 				"scale3D":
 				{
@@ -337,9 +187,34 @@
 				},
 				"translation":
 				{
+					"x": -700.4595947265625,
+					"y": 100.50255584716797,
+					"z": 136.80844116210938
+				},
+				"scale3D":
+				{
+					"x": 12.25,
+					"y": 12.25,
+					"z": 1
+				}
+			},
+			"assetPath": "Plane.titan"
+		},
+		{
+			"transform":
+			{
+				"rotation":
+				{
+					"x": 0,
+					"y": 0,
+					"z": 0,
+					"w": 1
+				},
+				"translation":
+				{
 					"x": -1070.0025634765625,
 					"y": 370,
-					"z": 226.00160217285156
+					"z": 306.0015869140625
 				},
 				"scale3D":
 				{

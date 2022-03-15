@@ -1,7 +1,19 @@
 #include "stdafx.h"
+#include "AppDraw.h"
 #include "Scene.h"
 #include "TitanEngine.h"
 #include "Game.h"
+
+
+#if defined(_PLATFORM_IOS)
+
+int main(){}
+
+#endif
+
+
+
+#if defined(_PLATFORM_WINDOWS)
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
 	PSTR cmdLine, int showCmd)
@@ -22,4 +34,4 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
 	game.Destroy();
 }
 
-
+#endif

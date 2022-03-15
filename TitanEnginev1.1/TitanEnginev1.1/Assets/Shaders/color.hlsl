@@ -5,7 +5,7 @@ cbuffer cbPerObject : register(b0)
 	float4x4 gLocation;
 	float4x4 gRotation;
 	float4x4 gScale;
-	float gTime;
+	float1 gTime;
 };
 
 struct VertexIn

@@ -46,7 +46,7 @@ void DXRenderer::Update(const GameTimer & gt)
 		glm::mat4 world = location * rotation * scale;
 		//glm::mat4 world = location * scale * rotation;
 		glm::mat4 view = mView;
-		glm::mat4 proj = mProj;
+		glm::mat4 proj = mProj; 
 		glm::mat4 worldViewProj = proj * view * world;
 
 		objConstants.WorldViewProj = glm::transpose(worldViewProj);
@@ -391,7 +391,7 @@ void DXRenderer::FlushCommandQueue()
 
 void DXRenderer::UpdateScene()
 {
-	currentElementCount = (UINT)scene->SceneDataArr.size();
+	mCurrentElementCount = (UINT)scene->SceneDataArr.size();
 	BuildDescriptorHeaps();
 	BuildConstantBuffers();
 	BuildGeometry();
@@ -401,8 +401,7 @@ void DXRenderer::BuildDescriptorHeaps()
 {
 	D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc;
 	// NumDescriptors should be the Actor num
-	UINT DescriptorNum = currentElementCount;
-	cbvHeapDesc.NumDescriptors = DescriptorNum;
+	cbvHeapDesc.NumDescriptors = mCurrentElementCount;
 
 	cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
@@ -413,7 +412,7 @@ void DXRenderer::BuildDescriptorHeaps()
 
 void DXRenderer::BuildConstantBuffers()
 {
-	mObjectCB = std::make_unique<UploadBuffer<ObjectConstants>>(md3dDevice.Get(), currentElementCount, true);
+	mObjectCB = std::make_unique<UploadBuffer<ObjectConstants>>(md3dDevice.Get(), mCurrentElementCount, true);
 
 	UINT DescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
@@ -422,7 +421,7 @@ void DXRenderer::BuildConstantBuffers()
 
 	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
 
-	for (int i = 0; i < currentElementCount; i++)
+	for (int i = 0; i < mCurrentElementCount; i++)
 	{
 		D3D12_GPU_VIRTUAL_ADDRESS cbAddress = mObjectCB->Resource()->GetGPUVirtualAddress();
 		auto heapCPUHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(mCbvHeap->GetCPUDescriptorHandleForHeapStart());

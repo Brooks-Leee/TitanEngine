@@ -37,7 +37,7 @@ void ResourceManager::LoadAllActorInMap(const std::string& FilePath)
 			if (AllMeshData.find(scene->SceneData.AssetPath) == AllMeshData.end() )
 			{
 				std::string FilePath = "Assets\\StaticMesh\\" + scene->SceneData.AssetPath;
-				StaticMesh* staticMesh = LoadBinaryFile(FilePath);
+				StaticMesh* staticMesh = LoadStaticMesh(FilePath);
 				FMeshData* meshData = staticMesh->GetStaticMesh();
 				AllMeshData.insert(std::pair<std::string, FMeshData*>(scene->SceneData.AssetPath, meshData));
 
@@ -46,7 +46,7 @@ void ResourceManager::LoadAllActorInMap(const std::string& FilePath)
 	}
 }
 
-StaticMesh* ResourceManager::LoadBinaryFile(const std::string& FilePath)
+StaticMesh* ResourceManager::LoadStaticMesh(const std::string& FilePath)
 {
 	StaticMesh* staticMesh = new StaticMesh;
 	std::ifstream ifs(FilePath, std::ios::binary);
