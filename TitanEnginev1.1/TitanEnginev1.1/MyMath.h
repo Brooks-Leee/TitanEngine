@@ -7,6 +7,12 @@ struct FVector
 	float z;
 };
 
+struct FVector2
+{
+	float u;
+	float v;
+};
+
 struct FVector4
 {
 	float x;

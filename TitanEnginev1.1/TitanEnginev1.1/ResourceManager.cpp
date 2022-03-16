@@ -15,8 +15,9 @@ ResourceManager::~ResourceManager()
 
 }
 
-void ResourceManager::LoadAllActorInMap(const std::string& FilePath)
+void ResourceManager::LoadAllActorInMap()
 {
+	const char* FilePath = "Assets/Map/Map.titan";
 	Scene* scene = TitanEngine::Get()->GetSceneIns();
 	std::ifstream ifs(FilePath, std::ios::binary);
 	if (ifs.is_open())
@@ -32,14 +33,17 @@ void ResourceManager::LoadAllActorInMap(const std::string& FilePath)
 			ifs.read((char*)&StrLen, sizeof(int32_t));
 			scene->SceneData.AssetPath.resize(StrLen);
 			ifs.read((char*)scene->SceneData.AssetPath.data(), sizeof(char) * StrLen);
+			scene->SceneData.AssetPath.erase(scene->SceneData.AssetPath.size() - 1, 1);
 			scene->SceneDataArr.push_back(scene->SceneData);
 
-			if (AllMeshData.find(scene->SceneData.AssetPath) == AllMeshData.end() )
+
+
+			if (mAllMeshData.find(scene->SceneData.AssetPath) == mAllMeshData.end() )
 			{
 				std::string FilePath = "Assets\\StaticMesh\\" + scene->SceneData.AssetPath;
 				StaticMesh* staticMesh = LoadStaticMesh(FilePath);
 				FMeshData* meshData = staticMesh->GetStaticMesh();
-				AllMeshData.insert(std::pair<std::string, FMeshData*>(scene->SceneData.AssetPath, meshData));
+				mAllMeshData.insert(std::pair<std::string, FMeshData*>(scene->SceneData.AssetPath, meshData));
 
 			}
 		}
@@ -87,13 +91,57 @@ StaticMesh* ResourceManager::LoadStaticMesh(const std::string& FilePath)
 		ifs.read((char*)staticMesh->StaticMeshInfo.normals.data(), normalsLen * sizeof(FVector4));
 	//	pos.push_back(ifs.tellg());
 
+		int32_t uvLength = 0;
+		ifs.read((char*)&uvLength, sizeof(int32_t));
+		staticMesh->StaticMeshInfo.texcoords.resize(uvLength);
+		ifs.read((char*)staticMesh->StaticMeshInfo.texcoords.data(), uvLength * sizeof(FVector2));
+
+		staticMesh->StaticMeshInfo.AssetPath.erase(staticMesh->StaticMeshInfo.AssetPath.size() - 1, 1);
+
 		
 	}
 	ifs.close();
 	return staticMesh;
 }
 
+void ResourceManager::LoadTextures()
+{
+
+	DXRenderer* renderer = TitanEngine::Get()->GetRenderer();
+	renderer->mCommandList->Reset(renderer->mDirectCmdListAlloc.Get(), nullptr);
+
+	auto waterTex = std::make_shared<Texture>();
+	waterTex->Name = "waterTex";
+	waterTex->Filename = L"Assets/Texture/water.dds";
+	ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(renderer->md3dDevice.Get(), renderer->mCommandList.Get(), waterTex->Filename.c_str(), waterTex->Resource, waterTex->UploadHeap));
+
+	auto rockTex = std::make_shared<Texture>();
+	rockTex->Name = "rockTex";
+	rockTex->Filename = L"Assets/Texture/rock.dds";
+	ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(renderer->md3dDevice.Get(), renderer->mCommandList.Get(), rockTex->Filename.c_str(), rockTex->Resource, rockTex->UploadHeap));
+
+	auto brickTex = std::make_shared<Texture>();
+	brickTex->Name = "brickTex";
+	brickTex->Filename = L"Assets/Texture/brick.dds";
+	ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(renderer->md3dDevice.Get(), renderer->mCommandList.Get(), brickTex->Filename.c_str(), brickTex->Resource, brickTex->UploadHeap));
+
+
+
+
+	mTextures[waterTex->Name] = std::move(waterTex);
+	mTextures[rockTex->Name] = std::move(rockTex);
+	//mTextures.insert(std::pair<std::string, std::shared_ptr<Texture>>(rockTex->Name, rockTex));
+	mTextures[brickTex->Name] = std::move(brickTex);
+
+	
+}
+
 std::map<std::string, FMeshData*> ResourceManager::getAllMeshData()
 {
-	return AllMeshData;
+	return mAllMeshData;
+}
+
+std::unordered_map<std::string, std::shared_ptr<Texture>> ResourceManager::getTextures()
+{
+	return mTextures;
 }

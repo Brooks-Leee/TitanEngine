@@ -35,10 +35,10 @@ public:
 
 	void FlushCommandQueue();
 
-
 	void UpdateScene();
+
 	void BuildDescriptorHeaps();
-	void BuildConstantBuffers();
+	void BuildDescriptor();
 	void BuildRootSignature();
 	void BuildShadersAndInputLayout();
 	void BuildGeometry();
@@ -52,6 +52,8 @@ public:
 	void LogAdapters();
 	void LogAdapterOutputs(IDXGIAdapter* adapter);
 	void LogOutputDisplayModes(IDXGIOutput* output, DXGI_FORMAT format);
+	std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> GetStaticSamplers();
+
 
 
 	bool      m4xMsaaState = false;    // 4X MSAA enabled
@@ -91,12 +93,17 @@ public:
 	int mClientHeight = 600;
 
 
+
 private:
 
 	ComPtr<ID3D12RootSignature> mRootSignature = nullptr;
-	ComPtr<ID3D12DescriptorHeap> mCbvHeap = nullptr;
+	ComPtr<ID3D12DescriptorHeap> mCbvSrvHeap = nullptr;
+	ComPtr<ID3D12DescriptorHeap> mSrvHeap = nullptr;
 
 	std::vector<ComPtr<ID3D12DescriptorHeap>> mCbvHeapArr;
+
+	std::map<std::string, int> mTexTableIndex;
+
 
 	std::unique_ptr<MeshGeometry> mGeo = nullptr;
 

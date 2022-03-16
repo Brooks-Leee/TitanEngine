@@ -72,6 +72,9 @@
     <ClInclude Include="WinInput.h">
       <Filter>Public</Filter>
     </ClInclude>
+    <ClInclude Include="DDSTextureLoader.h">
+      <Filter>Public</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="d3dUtil.cpp">
@@ -120,6 +123,9 @@
       <Filter>Private</Filter>
     </ClCompile>
     <ClCompile Include="WinInput.cpp">
+      <Filter>Private</Filter>
+    </ClCompile>
+    <ClCompile Include="DDSTextureLoader.cpp">
       <Filter>Private</Filter>
     </ClCompile>
   </ItemGroup>

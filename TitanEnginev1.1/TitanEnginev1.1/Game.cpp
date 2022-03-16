@@ -3,14 +3,17 @@
 
 void Game::Init()
 {
-	const char* FilePath = "Assets\\Map\\Map.titan";
-	LoadAllActorInMap(FilePath);
+	
+	LoadAssets();
 
 }
 
-void Game::LoadAllActorInMap(const std::string& FilePath)
+void Game::LoadAssets()
 {
-	TitanEngine::Get()->GetResourceMgr()->LoadAllActorInMap(FilePath);
+	
+	TitanEngine::Get()->GetResourceMgr()->LoadAllActorInMap();
+	TitanEngine::Get()->GetResourceMgr()->LoadTextures();
+
 	TitanEngine::Get()->GetRenderer()->UpdateScene();
 }
 

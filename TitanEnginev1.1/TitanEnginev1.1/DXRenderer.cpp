@@ -12,12 +12,13 @@ bool DXRenderer::Initialize()
 	scene = TitanEngine::Get()->GetSceneIns();
 	OnResize();
 
-	BuildDescriptorHeaps();
-	BuildConstantBuffers();
+	//BuildRootSignature();
+	//BuildShadersAndInputLayout();
+	//BuildPSO();
 	BuildRootSignature();
 	BuildShadersAndInputLayout();
-	//BuildGeometry();
 	BuildPSO();
+	
 
 	return true;
 }
@@ -62,12 +63,10 @@ void DXRenderer::Update(const GameTimer & gt)
 
 void DXRenderer::Draw(const GameTimer& gt)
 {
-	// Reuse the memory associated with command recording.
-   // We can only reset when the associated command lists have finished execution on the GPU.
+
 	ThrowIfFailed(mDirectCmdListAlloc->Reset());
 
-	// A command list can be reset after it has been added to the command queue via ExecuteCommandList.
-	// Reusing the command list reuses memory.
+	
 	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSO.Get()));
 	mCommandList->RSSetViewports(1, &mScreenViewport);
 	mCommandList->RSSetScissorRects(1, &mScissorRect);
@@ -85,12 +84,14 @@ void DXRenderer::Draw(const GameTimer& gt)
 	mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
 
 
-	ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvHeap.Get() };
+	ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvSrvHeap.Get()};
 	mCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
 	mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
 
-	// bind VBV with input slot(0 ~ 15)
+
+	std::string water = "Plane.titan";
+	std::string rock = "SM_MatPreviewMesh_02.titan";
 
 	for (int i = 0; i < mGeoArr.size(); i++)
 	{
@@ -98,10 +99,37 @@ void DXRenderer::Draw(const GameTimer& gt)
 		mCommandList->IASetIndexBuffer(&mGeoArr[i]->IndexBufferView());
 		mCommandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-		auto heapGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mCbvHeap->GetGPUDescriptorHandleForHeapStart());
+
+		auto heapGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mCbvSrvHeap->GetGPUDescriptorHandleForHeapStart());
 		heapGPUHandle.Offset(i, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
 		mCommandList->SetGraphicsRootDescriptorTable(0, heapGPUHandle);
+		
+		
 
+		//heapGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mCbvSrvHeap->GetGPUDescriptorHandleForHeapStart());
+		//heapGPUHandle.Offset(9, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+		//mCommandList->SetGraphicsRootDescriptorTable(1, heapGPUHandle);
+
+
+		if (mGeoArr[i]->Name == water)
+		{
+			heapGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mCbvSrvHeap->GetGPUDescriptorHandleForHeapStart());
+			heapGPUHandle.Offset(mTexTableIndex["waterTex"], md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+			mCommandList->SetGraphicsRootDescriptorTable(1, heapGPUHandle);
+		}
+		else if (mGeoArr[i]->Name == rock)
+		{
+			heapGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mCbvSrvHeap->GetGPUDescriptorHandleForHeapStart());
+			heapGPUHandle.Offset(mTexTableIndex["rockTex"], md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+			mCommandList->SetGraphicsRootDescriptorTable(1, heapGPUHandle);
+		}
+		else
+		{
+			heapGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mCbvSrvHeap->GetGPUDescriptorHandleForHeapStart());
+			heapGPUHandle.Offset(mTexTableIndex["brickTex"], md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+			mCommandList->SetGraphicsRootDescriptorTable(1, heapGPUHandle);
+
+		}
 		mCommandList->DrawIndexedInstanced(mGeoArr[i]->DrawArgs[mGeoArr[i]->Name].IndexCount, 1, 0, 0, 0);
 	}
 
@@ -224,10 +252,10 @@ void DXRenderer::OnResize()
 
 
 	scene->camera.SetCameraPos(1000.0f, 2000.0f, 2000.0f);
-	scene->camera.SetLens(0.25f * MathHelper::Piglm, static_cast<float>(mClientWidth) / mClientHeight, 1.0f, 10000.0f);
+	scene->camera.SetLens(0.25f * MathHelper::Piglm, static_cast<float>(mClientWidth) / mClientHeight, 1.0f, 1000000.0f);
 	scene->camera.LookAt(scene->camera.GetCameraPos3f(), glm::vec3(0.0f, 0.0f, 0.0f), scene->camera.GetUp());
 
-	mProj = glm::perspectiveFovLH(0.25f * MathHelper::Piglm, (float)mClientWidth, (float)mClientHeight, 1.0f, 10000.0f);
+	//wwwwmProj = glm::perspectiveFovLH(0.25f * MathHelper::Piglm, (float)mClientWidth, (float)mClientHeight, 1.0f, 1000000.0f);
 }
 
 
@@ -392,25 +420,31 @@ void DXRenderer::FlushCommandQueue()
 void DXRenderer::UpdateScene()
 {
 	mCurrentElementCount = (UINT)scene->SceneDataArr.size();
+	
+	ThrowIfFailed(mCommandList->Close());
+	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
+	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+	
 	BuildDescriptorHeaps();
-	BuildConstantBuffers();
+	BuildDescriptor();
 	BuildGeometry();
 }
 
 void DXRenderer::BuildDescriptorHeaps()
 {
-	D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc;
-	// NumDescriptors should be the Actor num
-	cbvHeapDesc.NumDescriptors = mCurrentElementCount;
+	D3D12_DESCRIPTOR_HEAP_DESC cbvAndsrvDesc;
 
-	cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	cbvHeapDesc.NodeMask = 0;
-	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&cbvHeapDesc,
-		IID_PPV_ARGS(&mCbvHeap)));
+	// NumDescriptors should be the Actor num
+	cbvAndsrvDesc.NumDescriptors = mCurrentElementCount + 3;
+	cbvAndsrvDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	cbvAndsrvDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	cbvAndsrvDesc.NodeMask = 0;
+
+	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&cbvAndsrvDesc, IID_PPV_ARGS(&mCbvSrvHeap)));
+
 }
 
-void DXRenderer::BuildConstantBuffers()
+void DXRenderer::BuildDescriptor()
 {
 	mObjectCB = std::make_unique<UploadBuffer<ObjectConstants>>(md3dDevice.Get(), mCurrentElementCount, true);
 
@@ -421,29 +455,60 @@ void DXRenderer::BuildConstantBuffers()
 
 	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
 
+	auto heapCPUHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(mCbvSrvHeap->GetCPUDescriptorHandleForHeapStart());	
+
 	for (int i = 0; i < mCurrentElementCount; i++)
 	{
 		D3D12_GPU_VIRTUAL_ADDRESS cbAddress = mObjectCB->Resource()->GetGPUVirtualAddress();
-		auto heapCPUHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(mCbvHeap->GetCPUDescriptorHandleForHeapStart());
-		heapCPUHandle.Offset(i, DescriptorSize);
 		cbAddress += i * objCBByteSize;
 		cbvDesc.BufferLocation = cbAddress;
 		cbvDesc.SizeInBytes = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
 		md3dDevice->CreateConstantBufferView(&cbvDesc, heapCPUHandle);
+		heapCPUHandle.Offset(1, DescriptorSize);
 	}
+	// Fill out SRV 
+	auto Texture = TitanEngine::Get()->GetResourceMgr()->getTextures();
+	auto waterTex = Texture["waterTex"]->Resource;
+	auto rockTex = Texture["rockTex"]->Resource;
+	auto brickTex = Texture["brickTex"]->Resource;
+
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.Format = waterTex->GetDesc().Format;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MostDetailedMip = 0;
+	srvDesc.Texture2D.MipLevels = -1;
+	
+	md3dDevice->CreateShaderResourceView(waterTex.Get(), &srvDesc, heapCPUHandle);
+	mTexTableIndex["waterTex"] = mCurrentElementCount;
+
+	srvDesc.Format = rockTex->GetDesc().Format;
+	heapCPUHandle.Offset(1, DescriptorSize);
+	md3dDevice->CreateShaderResourceView(rockTex.Get(), &srvDesc, heapCPUHandle);
+	mTexTableIndex["rockTex"] = mCurrentElementCount + 1;
+
+	heapCPUHandle.Offset(1, DescriptorSize);
+	srvDesc.Format = brickTex->GetDesc().Format;
+	md3dDevice->CreateShaderResourceView(brickTex.Get(), &srvDesc, heapCPUHandle);
+	mTexTableIndex["brickTex"] = mCurrentElementCount + 2;
+
+
 }
 
 void DXRenderer::BuildRootSignature()
 {
-	CD3DX12_ROOT_PARAMETER slotRootParameter[1];
-
-	// Create a single descriptor table of CBVs.
+	CD3DX12_DESCRIPTOR_RANGE texTable;
+	texTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
 	CD3DX12_DESCRIPTOR_RANGE cbvTable;
 	cbvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
-	slotRootParameter[0].InitAsDescriptorTable(1, &cbvTable);
 
+	CD3DX12_ROOT_PARAMETER slotRootParameter[2];
+	slotRootParameter[0].InitAsDescriptorTable(1, &cbvTable);
+	slotRootParameter[1].InitAsDescriptorTable(1, &texTable, D3D12_SHADER_VISIBILITY_PIXEL);
+
+	auto staticSamplers = GetStaticSamplers();
 	// A root signature is an array of root parameters.
-	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(1, slotRootParameter, 0, nullptr,
+	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(2, slotRootParameter, (UINT)staticSamplers.size(), staticSamplers.data(),
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
 	// create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer
@@ -496,6 +561,9 @@ void DXRenderer::BuildGeometry()
 			vertices[i].Normal.y = meshData->second->normals[i].y;
 			vertices[i].Normal.z = meshData->second->normals[i].z;
 			vertices[i].Normal.w = meshData->second->normals[i].w;
+
+			vertices[i].Texcoord.x = meshData->second->texcoords[i].u;
+			vertices[i].Texcoord.y = meshData->second->texcoords[i].v;
 		}
 
 		std::vector<uint32_t> indices;
@@ -509,6 +577,7 @@ void DXRenderer::BuildGeometry()
 		const UINT ibByteSize = (UINT)indices.size() * sizeof(uint32_t);
 
 		Geo->Name = actor.AssetPath;
+		//Geo->Name.erase(Geo->Name.size() - 1, 1);
 
 		ThrowIfFailed(D3DCreateBlob(vbByteSize, &Geo->VertexBufferCPU));
 		ThrowIfFailed(D3DCreateBlob(ibByteSize, &Geo->IndexBufferCPU));
@@ -557,7 +626,8 @@ void DXRenderer::BuildShadersAndInputLayout()
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 28, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 28, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 44, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
 	};
 }
 
@@ -614,6 +684,64 @@ D3D12_CPU_DESCRIPTOR_HANDLE DXRenderer::DepthStencilView() const
 {
 	return mDsvHeap->GetCPUDescriptorHandleForHeapStart();
 }
+
+std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> DXRenderer::GetStaticSamplers()
+{
+	// Applications usually only need a handful of samplers.  So just define them all up front
+	// and keep them available as part of the root signature.  
+
+	const CD3DX12_STATIC_SAMPLER_DESC pointWrap(
+		0, // shaderRegister
+		D3D12_FILTER_MIN_MAG_MIP_POINT, // filter
+		D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressU
+		D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressV
+		D3D12_TEXTURE_ADDRESS_MODE_WRAP); // addressW
+
+	const CD3DX12_STATIC_SAMPLER_DESC pointClamp(
+		1, // shaderRegister
+		D3D12_FILTER_MIN_MAG_MIP_POINT, // filter
+		D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressU
+		D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressV
+		D3D12_TEXTURE_ADDRESS_MODE_CLAMP); // addressW
+
+	const CD3DX12_STATIC_SAMPLER_DESC linearWrap(
+		2, // shaderRegister
+		D3D12_FILTER_MIN_MAG_MIP_LINEAR, // filter
+		D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressU
+		D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressV
+		D3D12_TEXTURE_ADDRESS_MODE_WRAP); // addressW
+
+	const CD3DX12_STATIC_SAMPLER_DESC linearClamp(
+		3, // shaderRegister
+		D3D12_FILTER_MIN_MAG_MIP_LINEAR, // filter
+		D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressU
+		D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressV
+		D3D12_TEXTURE_ADDRESS_MODE_CLAMP); // addressW
+
+	const CD3DX12_STATIC_SAMPLER_DESC anisotropicWrap(
+		4, // shaderRegister
+		D3D12_FILTER_ANISOTROPIC, // filter
+		D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressU
+		D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressV
+		D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressW
+		0.0f,                             // mipLODBias
+		8);                               // maxAnisotropy
+
+	const CD3DX12_STATIC_SAMPLER_DESC anisotropicClamp(
+		5, // shaderRegister
+		D3D12_FILTER_ANISOTROPIC, // filter
+		D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressU
+		D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressV
+		D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressW
+		0.0f,                              // mipLODBias
+		8);                                // maxAnisotropy
+
+	return {
+		pointWrap, pointClamp,
+		linearWrap, linearClamp,
+		anisotropicWrap, anisotropicClamp };
+}
+
 
 void DXRenderer::CalculateFrameStats()
 {

@@ -6,7 +6,7 @@ class Game
 public:
 	void Init();
 
-	void LoadAllActorInMap(const std::string& FilePath);
+	void LoadAssets();
 
 	void Run();
 
