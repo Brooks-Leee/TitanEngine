@@ -3,7 +3,7 @@
 	"triangleNum": 3968,
 	"indicesNum": 11904,
 	"lODNum": 1,
-	"assetPath": "/Engine/EngineSky/SM_SkySphere.SM_SkySphere",
+	"assetPath": "SM_SkySphere.titan",
 	"vertices": [
 		{
 			"x": 0,

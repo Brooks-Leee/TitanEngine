@@ -114,7 +114,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_PLATFORM_WINDOWS;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_PLATFORM_WINDOWS;_RHI_DX12;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -145,20 +145,30 @@
   <ItemGroup>
     <ClInclude Include="Application.h" />
     <ClInclude Include="Camera.h" />
-    <ClInclude Include="DDSTextureLoader.h" />
-    <ClInclude Include="DXRenderer.h" />
-    <ClInclude Include="Game.h" />
-    <ClInclude Include="Input.h" />
-    <ClInclude Include="ResourceManager.h" />
-    <ClInclude Include="Scene.h" />
     <ClInclude Include="d3dUtil.h" />
     <ClInclude Include="d3dx12.h" />
+    <ClInclude Include="DDSTextureLoader.h" />
+    <ClInclude Include="FRHIDX12.h" />
+    <ClInclude Include="Game.h" />
+    <ClInclude Include="GPUResourceManager.h" />
+    <ClInclude Include="Input.h" />
+    <ClInclude Include="Renderer.h" />
+    <ClInclude Include="ResourceManager.h" />
+    <ClInclude Include="FRHI.h" />
+    <ClInclude Include="Scene.h" />
     <ClInclude Include="GameTimer.h" />
     <ClInclude Include="MyMath.h" />
     <ClInclude Include="StaticMesh.h" />
     <ClInclude Include="MathHelper.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="TMaterial.h" />
+    <ClInclude Include="TRHIResource.h" />
+    <ClInclude Include="TRHITexture.h" />
     <ClInclude Include="TitanEngine.h" />
+    <ClInclude Include="TMeshBufferDX12.h" />
+    <ClInclude Include="TResource.h" />
+    <ClInclude Include="TTexTure.h" />
+    <ClInclude Include="TTextureDX12.h" />
     <ClInclude Include="UploadBuffer.h" />
     <ClInclude Include="Win32Window.h" />
     <ClInclude Include="Window.h" />
@@ -166,20 +176,30 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
-    <ClCompile Include="DDSTextureLoader.cpp" />
-    <ClCompile Include="DXRenderer.cpp" />
-    <ClCompile Include="Game.cpp" />
-    <ClCompile Include="Input.cpp" />
-    <ClCompile Include="ResourceManager.cpp" />
-    <ClCompile Include="Scene.cpp" />
     <ClCompile Include="d3dUtil.cpp" />
+    <ClCompile Include="DDSTextureLoader.cpp" />
+    <ClCompile Include="FRHIDX12.cpp" />
+    <ClCompile Include="Game.cpp" />
+    <ClCompile Include="GPUResourceManager.cpp" />
+    <ClCompile Include="Input.cpp" />
+    <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="ResourceManager.cpp" />
+    <ClCompile Include="FRHI.cpp" />
+    <ClCompile Include="Scene.cpp" />
     <ClCompile Include="GameTimer.cpp" />
     <ClCompile Include="MathHelper.cpp" />
     <ClCompile Include="StaticMesh.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="TMaterial.cpp" />
+    <ClCompile Include="TRHIResource.cpp" />
+    <ClCompile Include="TRHITexture.cpp" />
     <ClCompile Include="TitanEngine.cpp" />
+    <ClCompile Include="TMeshBufferDX12.cpp" />
+    <ClCompile Include="TResource.cpp" />
+    <ClCompile Include="TTexTure.cpp" />
+    <ClCompile Include="TTextureDX12.cpp" />
     <ClCompile Include="Win32Window.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="WinInput.cpp" />

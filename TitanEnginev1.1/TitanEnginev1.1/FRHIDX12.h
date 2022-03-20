@@ -1,12 +1,12 @@
 #pragma once
-#include "stdafx.h"
-#include "Camera.h"
+#include "FRHI.h"
 #include "Scene.h"
+#include "stdafx.h"
+#include "TTextureDX12.h"
 
 using Microsoft::WRL::ComPtr;
 using namespace std;
 using namespace DirectX;
-
 
 struct ObjectConstants
 {
@@ -17,14 +17,35 @@ struct ObjectConstants
 	float gTime;
 };
 
-class DXRenderer
+
+class FRHIDX12 : public FRHI
 {
+public:
+
+	virtual void InitRHI(Scene* scene) override;
+	virtual void CreateMeshBuffer(FMeshData* meshData) override;
+	virtual void CreateTexture(std::shared_ptr<TTexTure> Texture, UINT index) override;
+
+	virtual void CreateConstantBuffer() override;
+	
+
+	virtual void SetViewPort(float TopLeftX, float TopLeftY, float Width, float Height, float MinDepth, float MaxDepth) override;
+	virtual void SetScissorRects(int ClientWidth, int ClientHeight) override;
+	virtual void SetMeshBuffer() override;
+	virtual void SetRenderTarget() override;
+
+	virtual void UpdateConstantBuffer(FSceneData actor) override;
+ 	virtual void Draw(FSceneData actor) override;
+	virtual void EndFrame() override;
+
+
+
 
 public:
 	bool Initialize();
 
 public:
-	void Update(const GameTimer& gt);
+	void UpdateConstantBuffer(const GameTimer& gt);
 	void Draw(const GameTimer& gt);
 
 	void OnResize();
@@ -54,6 +75,8 @@ public:
 	void LogOutputDisplayModes(IDXGIOutput* output, DXGI_FORMAT format);
 	std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> GetStaticSamplers();
 
+	void ResetCommandList();
+	void CloseCommandList();
 
 
 	bool      m4xMsaaState = false;    // 4X MSAA enabled
@@ -91,7 +114,7 @@ public:
 	DXGI_FORMAT mDepthStencilFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	int mClientWidth = 800;
 	int mClientHeight = 600;
-
+	glm::vec3 mCameraloc;
 
 
 private:
@@ -102,13 +125,17 @@ private:
 
 	std::vector<ComPtr<ID3D12DescriptorHeap>> mCbvHeapArr;
 
-	std::map<std::string, int> mTexTableIndex;
 
+	std::map<std::string, int> mTexTableIndex;
+	std::map<std::string, std::shared_ptr<TTextureDX12>> mTextures;
+
+	Scene* mScene = nullptr;
 
 	std::unique_ptr<MeshGeometry> mGeo = nullptr;
-
-	Scene* scene = nullptr; 
 	std::vector<std::shared_ptr<MeshGeometry>> mGeoArr;
+	std::unordered_map<std::string, std::shared_ptr<MeshGeometry>> mGeoMap;
+
+
 
 	ComPtr<ID3DBlob> mvsByteCode = nullptr;
 	ComPtr<ID3DBlob> mpsByteCode = nullptr;
@@ -130,10 +157,14 @@ private:
 	POINT mLastMousePos;
 
 	int mLastElementCount = 0;
-	int mCurrentElementCount = 10;
+	int mCurrentElementCount = 100;
 
 
 
 	FMeshData* mLoadedStruct;
+
+
+
+
 };
 

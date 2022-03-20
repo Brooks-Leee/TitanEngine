@@ -2,8 +2,7 @@
 #include "Window.h"
 #include "Scene.h"
 #include "ResourceManager.h"
-#include "DXRenderer.h"
-
+#include "Renderer.h"
 
 class TitanEngine
 {
@@ -32,14 +31,14 @@ public:
 	std::shared_ptr<ResourceManager> GetResourceMgr();
 	Window* GetWindowIns();
 	Scene* GetSceneIns();
-	DXRenderer* GetRenderer();
+	Renderer* GetRenderer();
 	GameTimer GetTimer();
 
 protected:
 	Window* WindowIns;
 	std::shared_ptr<ResourceManager> ResourceMgr;
 	Scene* SceneIns;
-	DXRenderer* Renderer;
+	Renderer* RendererIns;
 	GameTimer mTimer;
 
 	bool isRunning;

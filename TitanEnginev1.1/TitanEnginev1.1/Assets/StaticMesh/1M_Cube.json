@@ -3,7 +3,7 @@
 	"triangleNum": 12,
 	"indicesNum": 36,
 	"lODNum": 1,
-	"assetPath": "/Game/Geometry/Meshes/1M_Cube.1M_Cube",
+	"assetPath": "1M_Cube.titan",
 	"vertices": [
 		{
 			"x": 50,

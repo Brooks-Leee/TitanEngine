@@ -1,40 +1,367 @@
 #include "stdafx.h"
-#include "DXRenderer.h"
+#include "FRHIDX12.h"
 #include "Win32Window.h"
 #include "TitanEngine.h"
+#include "DDSTextureLoader.h"
 
 
-bool DXRenderer::Initialize()
+
+void FRHIDX12::InitRHI(Scene* scene)
+{
+	mScene = scene;
+	FRHIDX12::Initialize();
+
+}
+
+void FRHIDX12::CreateMeshBuffer(FMeshData* meshData)
+{
+	mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSO.Get());
+
+	std::vector<Vertex> vertices;
+	size_t verticesLen = meshData->Vertices.size();
+	vertices.resize(verticesLen);
+
+	for (int i = 0; i < verticesLen; i++)
+	{
+		vertices[i].Pos.x = meshData->Vertices[i].x;
+		vertices[i].Pos.y = meshData->Vertices[i].y;
+		vertices[i].Pos.z = meshData->Vertices[i].z;
+
+		vertices[i].Normal.x = meshData->normals[i].x;
+		vertices[i].Normal.y = meshData->normals[i].y;
+		vertices[i].Normal.z = meshData->normals[i].z;
+		vertices[i].Normal.w = meshData->normals[i].w;
+
+		vertices[i].Texcoord.x = meshData->texcoords[i].u;
+		vertices[i].Texcoord.y = meshData->texcoords[i].v;
+	}
+
+	std::vector<uint32_t> indices;
+	indices.resize(meshData->indices.size());
+	indices = meshData->indices;
+
+	std::shared_ptr<MeshGeometry> Geo = std::make_shared<MeshGeometry>();
+
+	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
+	const UINT ibByteSize = (UINT)indices.size() * sizeof(uint32_t);
+
+	Geo->Name = meshData->AssetPath;
+
+	ThrowIfFailed(D3DCreateBlob(vbByteSize, &Geo->VertexBufferCPU));
+	ThrowIfFailed(D3DCreateBlob(ibByteSize, &Geo->IndexBufferCPU));
+
+	CopyMemory(Geo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
+	CopyMemory(Geo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
+
+	Geo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
+		mCommandList.Get(), vertices.data(), vbByteSize, Geo->VertexBufferUploader);
+
+	Geo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
+		mCommandList.Get(), indices.data(), ibByteSize, Geo->IndexBufferUploader);
+
+	Geo->VertexByteStride = sizeof(Vertex);
+	Geo->VertexBufferByteSize = vbByteSize;
+	Geo->IndexFormat = DXGI_FORMAT_R32_UINT;
+	Geo->IndexBufferByteSize = ibByteSize;
+
+	SubmeshGeometry submesh;
+	submesh.IndexCount = (UINT)indices.size();
+	submesh.StartIndexLocation = 0;
+	submesh.BaseVertexLocation = 0;
+
+	Geo->DrawArgs[meshData->AssetPath] = submesh;
+
+	mGeoMap[meshData->AssetPath] = std::move(Geo);
+	mGeoArr.push_back(Geo);
+	
+
+	ThrowIfFailed(mCommandList->Close());
+	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
+	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+
+
+}
+
+
+
+
+void FRHIDX12::CreateConstantBuffer()
+{
+	mCurrentElementCount = (UINT)mScene->SceneDataArr.size();
+	mObjectCB = std::make_unique<UploadBuffer<ObjectConstants>>(md3dDevice.Get(), mCurrentElementCount, true);
+
+	UINT DescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	// Constant buffers must be a multiple of the minimum hardware allocation size (usually 256 bytes)
+	UINT objCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
+
+	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
+
+	auto heapCPUHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(mCbvSrvHeap->GetCPUDescriptorHandleForHeapStart());
+
+	for (int i = 0; i < mCurrentElementCount; i++)
+	{
+		D3D12_GPU_VIRTUAL_ADDRESS cbAddress = mObjectCB->Resource()->GetGPUVirtualAddress();
+		cbAddress += i * objCBByteSize;
+		cbvDesc.BufferLocation = cbAddress;
+		cbvDesc.SizeInBytes = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
+		md3dDevice->CreateConstantBufferView(&cbvDesc, heapCPUHandle);
+		heapCPUHandle.Offset(1, DescriptorSize);
+	}
+}
+
+void FRHIDX12::CreateTexture(std::shared_ptr<TTexTure> Texture, UINT index)
+{
+	ResetCommandList();
+
+	auto renderTex = std::make_shared<TTextureDX12>();
+	renderTex->Filename = Texture->Filename;
+	renderTex->Name = Texture->Name;
+	renderTex->TexIndex = mCurrentElementCount + index;
+	ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(), mCommandList.Get(), renderTex->Filename.c_str(), renderTex->Resource, renderTex->UploadHeap));
+	
+	mTextures[renderTex->Name] = std::move(renderTex);
+	//std::shared_ptr<TRHITexture> GPUTexture = renderTex;
+	CloseCommandList();
+	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
+	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+
+	auto Tex = mTextures[Texture->Name]->Resource;
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.Format = Tex->GetDesc().Format;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MostDetailedMip = 0;
+	srvDesc.Texture2D.MipLevels = -1;
+
+	auto heapCPUHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(mCbvSrvHeap->GetCPUDescriptorHandleForHeapStart());
+	UINT DescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+
+	heapCPUHandle.Offset(mTextures[Texture->Name]->TexIndex, DescriptorSize);
+	
+	md3dDevice->CreateShaderResourceView(Tex.Get(), &srvDesc, heapCPUHandle);
+
+}
+
+
+void FRHIDX12::SetViewPort(float TopLeftX, float TopLeftY, float Width, float Height, float MinDepth, float MaxDepth)
+{
+
+	mScreenViewport.TopLeftX = TopLeftX;
+	mScreenViewport.TopLeftY = TopLeftY;
+	mScreenViewport.Width = Width;
+	mScreenViewport.Height = Height;
+	mScreenViewport.MinDepth = MinDepth;
+	mScreenViewport.MaxDepth = MaxDepth;
+	mCommandList->RSSetViewports(1, &mScreenViewport);
+}
+
+void FRHIDX12::SetScissorRects(int ClientWidth, int ClientHeight)
+{
+	mScissorRect = { 0, 0, ClientWidth, ClientHeight };
+	mCommandList->RSSetScissorRects(1, &mScissorRect);
+	
+}
+
+void FRHIDX12::SetMeshBuffer()
+{
+}
+
+
+
+
+void FRHIDX12::UpdateConstantBuffer(FSceneData actor)
+{
+	ObjectConstants objConstants;
+	mScene->camera.UpdateViewMat();
+
+	mView = mScene->camera.GetView4x4();
+	mProj = mScene->camera.GetProj4x4();
+	mCameraloc = mScene->camera.GetCameraPos3f();
+
+
+	auto& t = actor.Transform;
+	auto& s = t.scale;
+	auto& r = t.rotation;
+	auto& l = t.location;
+
+	auto scale = glm::scale(MathHelper::Identity4x4glm(), glm::vec3(s.x, s.y, s.z));
+	auto rotation = glm::transpose(glm::mat4_cast(glm::quat(r.w, r.pitch, r.yaw, r.roll)));
+	auto location = glm::translate(MathHelper::Identity4x4glm(), glm::vec3(l.x, l.y, l.z));
+
+
+	glm::mat4 world = location * rotation * scale;
+	//glm::mat4 world = location * scale * rotation;
+	glm::mat4 view = mView;
+	glm::mat4 proj = mProj;
+	glm::mat4 worldViewProj = proj * view * world;
+
+	objConstants.WorldViewProj = glm::transpose(worldViewProj);
+	objConstants.gTime = mTimer.TotalTime();
+	objConstants.Location = location;
+	objConstants.Rotation = rotation;
+	objConstants.Scale = scale;
+	// put the constant object into constant buffer which is a Upload Buffer
+	mObjectCB->CopyData(actor.HeapIndex, objConstants);
+
+
+	//FRHIDX12::UpdateConstantBuffer(mTimer);
+}
+
+void FRHIDX12::SetRenderTarget()
+{
+	ThrowIfFailed(mDirectCmdListAlloc->Reset());
+
+	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSO.Get()));
+
+	mCommandList->RSSetViewports(1, &mScreenViewport);
+	mCommandList->RSSetScissorRects(1, &mScissorRect);
+
+	// Indicate a state transition on the resource usage.
+	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
+		D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+	float rtvColor[4] = { 1.0f, 0.9f, 0.8f, 1.0f };
+	// Clear the back buffer and depth buffer.
+	mCommandList->ClearRenderTargetView(CurrentBackBufferView(), rtvColor, 0, nullptr);
+	mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
+
+	// Specify the buffers we are going to render to.
+	mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
+
+	ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvSrvHeap.Get() };
+	mCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+
+	mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
+
+	//ThrowIfFailed(mCommandList->Close());
+	//ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
+	//mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+
+}
+
+
+void FRHIDX12::Draw(FSceneData actor)
+{
+
+	//ThrowIfFailed(mDirectCmdListAlloc->Reset());
+
+	//ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSO.Get()));
+
+	auto geo = mGeoMap[actor.AssetPath];
+	mCommandList->IASetVertexBuffers(0, 1, &geo->VertexBufferView());
+	mCommandList->IASetIndexBuffer(&geo->IndexBufferView());
+	mCommandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+
+	auto heapGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mCbvSrvHeap->GetGPUDescriptorHandleForHeapStart());
+	heapGPUHandle.Offset(actor.HeapIndex, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+	mCommandList->SetGraphicsRootDescriptorTable(0, heapGPUHandle);
+
+
+
+	//heapGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mCbvSrvHeap->GetGPUDescriptorHandleForHeapStart());
+	//heapGPUHandle.Offset(9, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+	//mCommandList->SetGraphicsRootDescriptorTable(1, heapGPUHandle);
+
+
+	if (geo->Name == "Plane.titan")
+	{
+		heapGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mCbvSrvHeap->GetGPUDescriptorHandleForHeapStart());
+		heapGPUHandle.Offset(mTextures["waterTex"]->TexIndex, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+		mCommandList->SetGraphicsRootDescriptorTable(1, heapGPUHandle);
+	}
+	else if (geo->Name == "SM_MatPreviewMesh_02.titan")
+	{
+		heapGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mCbvSrvHeap->GetGPUDescriptorHandleForHeapStart());
+		heapGPUHandle.Offset(mTextures["rockTex"]->TexIndex, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+		mCommandList->SetGraphicsRootDescriptorTable(1, heapGPUHandle);
+	}
+	else
+	{
+		heapGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mCbvSrvHeap->GetGPUDescriptorHandleForHeapStart());
+		heapGPUHandle.Offset(mTextures["brickTex"]->TexIndex, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+		mCommandList->SetGraphicsRootDescriptorTable(1, heapGPUHandle);
+
+	}
+
+	mCommandList->SetGraphicsRoot32BitConstants(2, 3, &mCameraloc, 0);
+
+	mCommandList->DrawIndexedInstanced(geo->DrawArgs[geo->Name].IndexCount, 1, 0, 0, 0);
+
+
+	//mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
+	//	D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+
+	//ThrowIfFailed(mCommandList->Close());
+	//ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
+	//mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+
+	//ThrowIfFailed(mSwapChain->Present(0, 0));
+	//mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
+
+	//// Wait until frame commands are complete.  This waiting is inefficient and is
+	//// done for simplicity.  Later we will show how to organize our rendering code
+	//// so we do not have to wait per frame.
+
+	//FlushCommandQueue();
+
+}
+
+void FRHIDX12::EndFrame()
+{
+	// Indicate a state transition on the resource usage.
+	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
+		D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+
+	// Done recording commands.
+	ThrowIfFailed(mCommandList->Close());
+	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
+	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+
+	// swap the back and front buffers
+	ThrowIfFailed(mSwapChain->Present(0, 0));
+	mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
+
+	// Wait until frame commands are complete.  This waiting is inefficient and is
+	// done for simplicity.  Later we will show how to organize our rendering code
+	// so we do not have to wait per frame.
+
+	FlushCommandQueue();
+}
+
+
+
+bool FRHIDX12::Initialize()
 {
 	if (!InitDirect3D())
 		return false;
 
-	scene = TitanEngine::Get()->GetSceneIns();
 	OnResize();
 
 	//BuildRootSignature();
 	//BuildShadersAndInputLayout();
 	//BuildPSO();
+	BuildDescriptorHeaps();
 	BuildRootSignature();
 	BuildShadersAndInputLayout();
 	BuildPSO();
-	
 
 	return true;
 }
 
-void DXRenderer::Update(const GameTimer & gt)
+void FRHIDX12::UpdateConstantBuffer(const GameTimer& gt)
 {
-//	UpdateScene();
+	//	UpdateScene();
 	ObjectConstants objConstants;
 	for (int i = 0; i < mGeoArr.size(); i++)
 	{
-		scene->camera.UpdateViewMat();
+		mScene->camera.UpdateViewMat();
 
-		mView = scene->camera.GetView4x4();
-		mProj = scene->camera.GetProj4x4();
+		mView = mScene->camera.GetView4x4();
+		mProj = mScene->camera.GetProj4x4();
 
-		auto& t = scene->SceneDataArr[i].Transform;
+		auto& t = mScene->SceneDataArr[i].Transform;
 		auto& s = t.scale;
 		auto& r = t.rotation;
 		auto& l = t.location;
@@ -47,7 +374,7 @@ void DXRenderer::Update(const GameTimer & gt)
 		glm::mat4 world = location * rotation * scale;
 		//glm::mat4 world = location * scale * rotation;
 		glm::mat4 view = mView;
-		glm::mat4 proj = mProj; 
+		glm::mat4 proj = mProj;
 		glm::mat4 worldViewProj = proj * view * world;
 
 		objConstants.WorldViewProj = glm::transpose(worldViewProj);
@@ -61,38 +388,15 @@ void DXRenderer::Update(const GameTimer & gt)
 }
 
 
-void DXRenderer::Draw(const GameTimer& gt)
-{
 
+
+
+void FRHIDX12::Draw(const GameTimer& gt)
+{
 	ThrowIfFailed(mDirectCmdListAlloc->Reset());
 
-	
 	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSO.Get()));
-	mCommandList->RSSetViewports(1, &mScreenViewport);
-	mCommandList->RSSetScissorRects(1, &mScissorRect);
-
-
-	// Indicate a state transition on the resource usage.
-	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
-		D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
-	float rtvColor[4] = { 1.0f, 0.9f, 0.8f, 1.0f };
-	// Clear the back buffer and depth buffer.
-	mCommandList->ClearRenderTargetView(CurrentBackBufferView(), rtvColor, 0, nullptr);
-	mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
-
-	// Specify the buffers we are going to render to.
-	mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
-
-
-	ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvSrvHeap.Get()};
-	mCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-
-	mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
-
-
-	std::string water = "Plane.titan";
-	std::string rock = "SM_MatPreviewMesh_02.titan";
-
+	
 	for (int i = 0; i < mGeoArr.size(); i++)
 	{
 		mCommandList->IASetVertexBuffers(0, 1, &mGeoArr[i]->VertexBufferView());
@@ -103,30 +407,30 @@ void DXRenderer::Draw(const GameTimer& gt)
 		auto heapGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mCbvSrvHeap->GetGPUDescriptorHandleForHeapStart());
 		heapGPUHandle.Offset(i, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
 		mCommandList->SetGraphicsRootDescriptorTable(0, heapGPUHandle);
-		
-		
+
+
 
 		//heapGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mCbvSrvHeap->GetGPUDescriptorHandleForHeapStart());
 		//heapGPUHandle.Offset(9, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
 		//mCommandList->SetGraphicsRootDescriptorTable(1, heapGPUHandle);
 
 
-		if (mGeoArr[i]->Name == water)
+		if (mGeoArr[i]->Name == "Plane.titan")
 		{
 			heapGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mCbvSrvHeap->GetGPUDescriptorHandleForHeapStart());
-			heapGPUHandle.Offset(mTexTableIndex["waterTex"], md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+			heapGPUHandle.Offset(mTextures["waterTex"]->TexIndex, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
 			mCommandList->SetGraphicsRootDescriptorTable(1, heapGPUHandle);
 		}
-		else if (mGeoArr[i]->Name == rock)
+		else if (mGeoArr[i]->Name == "SM_MatPreviewMesh_02.titan")
 		{
 			heapGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mCbvSrvHeap->GetGPUDescriptorHandleForHeapStart());
-			heapGPUHandle.Offset(mTexTableIndex["rockTex"], md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+			heapGPUHandle.Offset(mTextures["rockTex"]->TexIndex, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
 			mCommandList->SetGraphicsRootDescriptorTable(1, heapGPUHandle);
 		}
 		else
 		{
 			heapGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mCbvSrvHeap->GetGPUDescriptorHandleForHeapStart());
-			heapGPUHandle.Offset(mTexTableIndex["brickTex"], md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+			heapGPUHandle.Offset(mTextures["brickTex"]->TexIndex, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
 			mCommandList->SetGraphicsRootDescriptorTable(1, heapGPUHandle);
 
 		}
@@ -154,7 +458,7 @@ void DXRenderer::Draw(const GameTimer& gt)
 	FlushCommandQueue();
 }
 
-void DXRenderer::OnResize()
+void FRHIDX12::OnResize()
 {
 	assert(md3dDevice);
 	assert(mSwapChain);
@@ -236,7 +540,7 @@ void DXRenderer::OnResize()
 	ThrowIfFailed(mCommandList->Close());
 	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
 	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-	
+
 	// Wait until resize is complete.
 	FlushCommandQueue();
 
@@ -251,15 +555,15 @@ void DXRenderer::OnResize()
 	mScissorRect = { 0, 0, mClientWidth, mClientHeight };
 
 
-	scene->camera.SetCameraPos(1000.0f, 2000.0f, 2000.0f);
-	scene->camera.SetLens(0.25f * MathHelper::Piglm, static_cast<float>(mClientWidth) / mClientHeight, 1.0f, 1000000.0f);
-	scene->camera.LookAt(scene->camera.GetCameraPos3f(), glm::vec3(0.0f, 0.0f, 0.0f), scene->camera.GetUp());
+	mScene->camera.SetCameraPos(1000.0f, 2000.0f, 2000.0f);
+	mScene->camera.SetLens(0.25f * MathHelper::Piglm, static_cast<float>(mClientWidth) / mClientHeight, 1.0f, 1000000.0f);
+	mScene->camera.LookAt(mScene->camera.GetCameraPos3f(), glm::vec3(0.0f, 0.0f, 0.0f), mScene->camera.GetUp());
 
 	//wwwwmProj = glm::perspectiveFovLH(0.25f * MathHelper::Piglm, (float)mClientWidth, (float)mClientHeight, 1.0f, 1000000.0f);
 }
 
 
-bool DXRenderer::InitDirect3D()
+bool FRHIDX12::InitDirect3D()
 {
 	#if defined(DEBUG) || defined(_DEBUG) 
 	// Enable the D3D12 debug layer.
@@ -320,7 +624,7 @@ bool DXRenderer::InitDirect3D()
 	return true;
 }
 
-void DXRenderer::CreateCommandObjects()
+void FRHIDX12::CreateCommandObjects()
 {
 	D3D12_COMMAND_QUEUE_DESC queueDesc = {};
 	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
@@ -342,7 +646,7 @@ void DXRenderer::CreateCommandObjects()
 	// calling Reset.
 	mCommandList->Close();
 }
-void DXRenderer::CreateSwapChain()
+void FRHIDX12::CreateSwapChain()
 {
 	// Release the previous swapchain we will be recreating.
 	mSwapChain.Reset();
@@ -372,7 +676,7 @@ void DXRenderer::CreateSwapChain()
 		&sd,
 		mSwapChain.GetAddressOf()));
 }
-void DXRenderer::CreateRtvAndDsvDescriptorHeaps()
+void FRHIDX12::CreateRtvAndDsvDescriptorHeaps()
 {
 	D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc;
 	rtvHeapDesc.NumDescriptors = SwapChainBufferCount;
@@ -393,7 +697,7 @@ void DXRenderer::CreateRtvAndDsvDescriptorHeaps()
 }
 
 
-void DXRenderer::FlushCommandQueue()
+void FRHIDX12::FlushCommandQueue()
 {
 	mCurrentFence++;
 
@@ -417,25 +721,25 @@ void DXRenderer::FlushCommandQueue()
 }
 
 
-void DXRenderer::UpdateScene()
-{
-	mCurrentElementCount = (UINT)scene->SceneDataArr.size();
-	
-	ThrowIfFailed(mCommandList->Close());
-	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
-	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-	
-	BuildDescriptorHeaps();
-	BuildDescriptor();
-	BuildGeometry();
-}
+//void FRHIDX12::UpdateScene()
+//{
+//	mCurrentElementCount = (UINT)mScene->SceneDataArr.size();
+//
+//	ThrowIfFailed(mCommandList->Close());
+//	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
+//	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+//
+//	BuildDescriptorHeaps();
+//	BuildDescriptor();
+//	BuildGeometry();
+//}
 
-void DXRenderer::BuildDescriptorHeaps()
+void FRHIDX12::BuildDescriptorHeaps()
 {
 	D3D12_DESCRIPTOR_HEAP_DESC cbvAndsrvDesc;
-
+	//mCurrentElementCount = (UINT)mScene->SceneDataArr.size();
 	// NumDescriptors should be the Actor num
-	cbvAndsrvDesc.NumDescriptors = mCurrentElementCount + 3;
+	cbvAndsrvDesc.NumDescriptors = 100;
 	cbvAndsrvDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	cbvAndsrvDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	cbvAndsrvDesc.NodeMask = 0;
@@ -444,7 +748,7 @@ void DXRenderer::BuildDescriptorHeaps()
 
 }
 
-void DXRenderer::BuildDescriptor()
+void FRHIDX12::BuildDescriptor()
 {
 	mObjectCB = std::make_unique<UploadBuffer<ObjectConstants>>(md3dDevice.Get(), mCurrentElementCount, true);
 
@@ -455,7 +759,7 @@ void DXRenderer::BuildDescriptor()
 
 	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
 
-	auto heapCPUHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(mCbvSrvHeap->GetCPUDescriptorHandleForHeapStart());	
+	auto heapCPUHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(mCbvSrvHeap->GetCPUDescriptorHandleForHeapStart());
 
 	for (int i = 0; i < mCurrentElementCount; i++)
 	{
@@ -467,10 +771,27 @@ void DXRenderer::BuildDescriptor()
 		heapCPUHandle.Offset(1, DescriptorSize);
 	}
 	// Fill out SRV 
-	auto Texture = TitanEngine::Get()->GetResourceMgr()->getTextures();
-	auto waterTex = Texture["waterTex"]->Resource;
-	auto rockTex = Texture["rockTex"]->Resource;
-	auto brickTex = Texture["brickTex"]->Resource;
+	auto Textures = TitanEngine::Get()->GetResourceMgr()->getTextures();
+
+	// Create render texture
+	ResetCommandList();
+	for (auto texture : Textures)
+	{
+		texture->Name;
+		auto renderTex = std::make_shared<TTextureDX12>();
+		renderTex->Filename = texture->Filename;
+		renderTex->Name = texture->Name;
+		ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(), mCommandList.Get(), texture->Filename.c_str(), renderTex->Resource, renderTex->UploadHeap));
+		mTextures[renderTex->Name] = std::move(renderTex);
+
+	}
+	CloseCommandList();
+	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
+	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+
+	auto waterTex = mTextures["waterTex"]->Resource;
+	auto rockTex = mTextures["rockTex"]->Resource;
+	auto brickTex = mTextures["brickTex"]->Resource;
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
@@ -478,7 +799,7 @@ void DXRenderer::BuildDescriptor()
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Texture2D.MostDetailedMip = 0;
 	srvDesc.Texture2D.MipLevels = -1;
-	
+
 	md3dDevice->CreateShaderResourceView(waterTex.Get(), &srvDesc, heapCPUHandle);
 	mTexTableIndex["waterTex"] = mCurrentElementCount;
 
@@ -495,20 +816,24 @@ void DXRenderer::BuildDescriptor()
 
 }
 
-void DXRenderer::BuildRootSignature()
+void FRHIDX12::BuildRootSignature()
 {
-	CD3DX12_DESCRIPTOR_RANGE texTable;
-	texTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
+	CD3DX12_DESCRIPTOR_RANGE texTable[2];
+	texTable[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
+	texTable[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
 	CD3DX12_DESCRIPTOR_RANGE cbvTable;
 	cbvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
+	
 
-	CD3DX12_ROOT_PARAMETER slotRootParameter[2];
+	CD3DX12_ROOT_PARAMETER slotRootParameter[3]; 
 	slotRootParameter[0].InitAsDescriptorTable(1, &cbvTable);
-	slotRootParameter[1].InitAsDescriptorTable(1, &texTable, D3D12_SHADER_VISIBILITY_PIXEL);
+	slotRootParameter[1].InitAsDescriptorTable(2, texTable, D3D12_SHADER_VISIBILITY_PIXEL);
+	slotRootParameter[2].InitAsConstants(3, 1, 0);
+
 
 	auto staticSamplers = GetStaticSamplers();
 	// A root signature is an array of root parameters.
-	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(2, slotRootParameter, (UINT)staticSamplers.size(), staticSamplers.data(),
+	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(3, slotRootParameter, (UINT)staticSamplers.size(), staticSamplers.data(),
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
 	// create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer
@@ -531,15 +856,14 @@ void DXRenderer::BuildRootSignature()
 }
 
 
-void DXRenderer::BuildGeometry()
+void FRHIDX12::BuildGeometry()
 {
-	
-	/*const char* FilePath = "Assets\\Map\\Map.titan";
-	mAllActor->LoadAllActorInMap(FilePath);*/
-	auto AllMeshData = TitanEngine::Get()->GetResourceMgr()->getAllMeshData();
-	mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSO.Get());
 
-	for (auto actor : scene->SceneDataArr)
+	auto AllMeshData = TitanEngine::Get()->GetResourceMgr()->getAllMeshData();
+
+
+	mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSO.Get());
+	for (auto actor : mScene->SceneDataArr)
 	{
 		std::vector<Vertex> vertices;
 		auto meshData = AllMeshData.find(actor.AssetPath);
@@ -612,15 +936,12 @@ void DXRenderer::BuildGeometry()
 	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 }
 
-void DXRenderer::BuildShadersAndInputLayout()
+void FRHIDX12::BuildShadersAndInputLayout()
 {
 	HRESULT hr = S_OK;
 
 	mvsByteCode = d3dUtil::CompileShader(L"Assets\\Shaders\\color.hlsl", nullptr, "VS", "vs_5_0");
 	mpsByteCode = d3dUtil::CompileShader(L"Assets\\Shaders\\color.hlsl", nullptr, "PS", "ps_5_0");
-
-	/*mvsByteCodeWPO = d3dUtil::CompileShader(L"Assets\\Shaders\\WPO.hlsl", nullptr, "VS", "vs_5_0");
-	mpsByteCodeWPO = d3dUtil::CompileShader(L"Assets\\Shaders\\WPO.hlsl", nullptr, "PS", "vs_5_0");*/
 
 	mInputLayout =
 	{
@@ -631,7 +952,7 @@ void DXRenderer::BuildShadersAndInputLayout()
 	};
 }
 
-void DXRenderer::BuildPSO()
+void FRHIDX12::BuildPSO()
 {
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
 	ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
@@ -667,12 +988,12 @@ void DXRenderer::BuildPSO()
 
 
 
-ID3D12Resource* DXRenderer::CurrentBackBuffer() const
+ID3D12Resource* FRHIDX12::CurrentBackBuffer() const
 {
 	return mSwapChainBuffer[mCurrBackBuffer].Get();
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE DXRenderer::CurrentBackBufferView() const
+D3D12_CPU_DESCRIPTOR_HANDLE FRHIDX12::CurrentBackBufferView() const
 {
 	return CD3DX12_CPU_DESCRIPTOR_HANDLE(
 		mRtvHeap->GetCPUDescriptorHandleForHeapStart(),
@@ -680,12 +1001,12 @@ D3D12_CPU_DESCRIPTOR_HANDLE DXRenderer::CurrentBackBufferView() const
 		mRtvDescriptorSize);
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE DXRenderer::DepthStencilView() const
+D3D12_CPU_DESCRIPTOR_HANDLE FRHIDX12::DepthStencilView() const
 {
 	return mDsvHeap->GetCPUDescriptorHandleForHeapStart();
 }
 
-std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> DXRenderer::GetStaticSamplers()
+std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> FRHIDX12::GetStaticSamplers()
 {
 	// Applications usually only need a handful of samplers.  So just define them all up front
 	// and keep them available as part of the root signature.  
@@ -742,8 +1063,21 @@ std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> DXRenderer::GetStaticSamplers()
 		anisotropicWrap, anisotropicClamp };
 }
 
+void FRHIDX12::ResetCommandList()
+{
+	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSO.Get()));
+}
 
-void DXRenderer::CalculateFrameStats()
+void FRHIDX12::CloseCommandList()
+{
+	ThrowIfFailed(mCommandList->Close());
+}
+
+
+
+
+
+void FRHIDX12::CalculateFrameStats()
 {
 	static int frameCnt = 0;
 	static float timeElapsed = 0.0f;
@@ -759,7 +1093,7 @@ void DXRenderer::CalculateFrameStats()
 		wstring fpsStr = to_wstring(fps);
 		wstring mspfStr = to_wstring(mspf);
 
-		wstring windowText = 
+		wstring windowText =
 			L"TitanEngine    fps: " + fpsStr +
 			L"   mspf: " + mspfStr;
 
@@ -771,7 +1105,7 @@ void DXRenderer::CalculateFrameStats()
 	}
 }
 
-void DXRenderer::LogAdapters()
+void FRHIDX12::LogAdapters()
 {
 	UINT i = 0;
 	IDXGIAdapter* adapter = nullptr;
@@ -799,7 +1133,7 @@ void DXRenderer::LogAdapters()
 	}
 }
 
-void DXRenderer::LogAdapterOutputs(IDXGIAdapter* adapter)
+void FRHIDX12::LogAdapterOutputs(IDXGIAdapter* adapter)
 {
 	UINT i = 0;
 	IDXGIOutput* output = nullptr;
@@ -821,7 +1155,7 @@ void DXRenderer::LogAdapterOutputs(IDXGIAdapter* adapter)
 	}
 }
 
-void DXRenderer::LogOutputDisplayModes(IDXGIOutput* output, DXGI_FORMAT format)
+void FRHIDX12::LogOutputDisplayModes(IDXGIOutput* output, DXGI_FORMAT format)
 {
 	UINT count = 0;
 	UINT flags = 0;

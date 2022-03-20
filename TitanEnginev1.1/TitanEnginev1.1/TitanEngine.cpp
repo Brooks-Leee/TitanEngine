@@ -1,7 +1,5 @@
 #include "stdafx.h"
 #include "TitanEngine.h"
-#include "Application.h"
-#include "AppDraw.h"
 #include "Win32Window.h"
 
 
@@ -28,8 +26,8 @@ bool TitanEngine::Init()
 	WindowIns = Window::Create();
 	WindowIns->initWindow();
 
-	Renderer = new DXRenderer;
-	Renderer->Initialize();
+	RendererIns = new Renderer;
+	RendererIns->Init();
 	return true;
 }
 
@@ -37,6 +35,8 @@ bool TitanEngine::Run()
 {
 	isRunning = true;
 	mTimer.Reset();
+
+	RendererIns->UpdateScene();
 
 	while (isRunning && WindowIns->Run())
 	{
@@ -51,19 +51,15 @@ void TitanEngine::Destroy()
 {
 	delete WindowIns;
 	WindowIns = nullptr;
-	delete Renderer;
-	Renderer = nullptr;
+	delete RendererIns;
+	RendererIns = nullptr;
 }
 
 void TitanEngine::RenderTick()
 {
-	Renderer->Update(mTimer);
-	Renderer->Draw(mTimer);
+	RendererIns->Run();
+
 }
-
-
-
-
 
 
 std::shared_ptr<ResourceManager> TitanEngine::GetResourceMgr()
@@ -81,9 +77,9 @@ Scene* TitanEngine::GetSceneIns()
 	return SceneIns;
 }
 
-DXRenderer* TitanEngine::GetRenderer()
+Renderer* TitanEngine::GetRenderer()
 {
-	return Renderer;
+	return RendererIns;
 }
 
 GameTimer TitanEngine::GetTimer()

@@ -34,6 +34,7 @@ void ResourceManager::LoadAllActorInMap()
 			scene->SceneData.AssetPath.resize(StrLen);
 			ifs.read((char*)scene->SceneData.AssetPath.data(), sizeof(char) * StrLen);
 			scene->SceneData.AssetPath.erase(scene->SceneData.AssetPath.size() - 1, 1);
+			scene->SceneData.HeapIndex = i;
 			scene->SceneDataArr.push_back(scene->SceneData);
 
 
@@ -98,7 +99,6 @@ StaticMesh* ResourceManager::LoadStaticMesh(const std::string& FilePath)
 
 		staticMesh->StaticMeshInfo.AssetPath.erase(staticMesh->StaticMeshInfo.AssetPath.size() - 1, 1);
 
-		
 	}
 	ifs.close();
 	return staticMesh;
@@ -107,33 +107,44 @@ StaticMesh* ResourceManager::LoadStaticMesh(const std::string& FilePath)
 void ResourceManager::LoadTextures()
 {
 
-	DXRenderer* renderer = TitanEngine::Get()->GetRenderer();
-	renderer->mCommandList->Reset(renderer->mDirectCmdListAlloc.Get(), nullptr);
+	//DXRenderer* renderer = TitanEngine::Get()->GetRenderer();
+	////renderer->mCommandList->Reset(renderer->mDirectCmdListAlloc.Get(), nullptr);
+	//renderer->ResetCommandList();
 
-	auto waterTex = std::make_shared<Texture>();
+	//auto waterTex = std::make_shared<Texture>();
+	//waterTex->Name = "waterTex";
+	//waterTex->Filename = L"Assets/Texture/water.dds";
+	//ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(renderer->md3dDevice.Get(), renderer->mCommandList.Get(), waterTex->Filename.c_str(), waterTex->Resource, waterTex->UploadHeap));
+
+	//auto rockTex = std::make_shared<Texture>();
+	//rockTex->Name = "rockTex";
+	//rockTex->Filename = L"Assets/Texture/rock.dds";
+	//ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(renderer->md3dDevice.Get(), renderer->mCommandList.Get(), rockTex->Filename.c_str(), rockTex->Resource, rockTex->UploadHeap));
+
+	//auto brickTex = std::make_shared<Texture>();
+	//brickTex->Name = "brickTex";
+	//brickTex->Filename = L"Assets/Texture/brick.dds";
+	//ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(renderer->md3dDevice.Get(), renderer->mCommandList.Get(), brickTex->Filename.c_str(), brickTex->Resource, brickTex->UploadHeap));
+
+	//mTextures[waterTex->Name] = std::move(waterTex);
+	//mTextures[rockTex->Name] = std::move(rockTex);
+	//mTextures[brickTex->Name] = std::move(brickTex);
+
+	auto waterTex = std::make_shared<TTexTure>();
 	waterTex->Name = "waterTex";
 	waterTex->Filename = L"Assets/Texture/water.dds";
-	ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(renderer->md3dDevice.Get(), renderer->mCommandList.Get(), waterTex->Filename.c_str(), waterTex->Resource, waterTex->UploadHeap));
-
-	auto rockTex = std::make_shared<Texture>();
+	
+	auto rockTex = std::make_shared<TTexTure>();
 	rockTex->Name = "rockTex";
 	rockTex->Filename = L"Assets/Texture/rock.dds";
-	ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(renderer->md3dDevice.Get(), renderer->mCommandList.Get(), rockTex->Filename.c_str(), rockTex->Resource, rockTex->UploadHeap));
 
-	auto brickTex = std::make_shared<Texture>();
+	auto brickTex = std::make_shared<TTexTure>();
 	brickTex->Name = "brickTex";
 	brickTex->Filename = L"Assets/Texture/brick.dds";
-	ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(renderer->md3dDevice.Get(), renderer->mCommandList.Get(), brickTex->Filename.c_str(), brickTex->Resource, brickTex->UploadHeap));
 
-
-
-
-	mTextures[waterTex->Name] = std::move(waterTex);
-	mTextures[rockTex->Name] = std::move(rockTex);
-	//mTextures.insert(std::pair<std::string, std::shared_ptr<Texture>>(rockTex->Name, rockTex));
-	mTextures[brickTex->Name] = std::move(brickTex);
-
-	
+	mTextures.push_back(waterTex);
+	mTextures.push_back(rockTex);
+	mTextures.push_back(brickTex);
 }
 
 std::map<std::string, FMeshData*> ResourceManager::getAllMeshData()
@@ -141,7 +152,7 @@ std::map<std::string, FMeshData*> ResourceManager::getAllMeshData()
 	return mAllMeshData;
 }
 
-std::unordered_map<std::string, std::shared_ptr<Texture>> ResourceManager::getTextures()
+std::vector<std::shared_ptr<TTexTure>> ResourceManager::getTextures()
 {
 	return mTextures;
 }

@@ -3,7 +3,7 @@
 	"triangleNum": 11983,
 	"indicesNum": 35949,
 	"lODNum": 1,
-	"assetPath": "/Game/StarterContent/Props/SM_MatPreviewMesh_02.SM_MatPreviewMesh_02",
+	"assetPath": "SM_MatPreviewMesh_02.titan",
 	"vertices": [
 		{
 			"x": 53.595870971679688,

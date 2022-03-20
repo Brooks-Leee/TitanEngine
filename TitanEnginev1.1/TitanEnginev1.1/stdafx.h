@@ -34,7 +34,6 @@
 #include "GameTimer.h"
 #include <crtdbg.h>
 
-#include "AppInit.h"
 #include "UploadBuffer.h"
 
 #include <comdef.h>

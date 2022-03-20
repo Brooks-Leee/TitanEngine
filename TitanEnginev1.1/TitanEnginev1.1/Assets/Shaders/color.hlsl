@@ -22,6 +22,9 @@ cbuffer cbPerObject : register(b0)
 };
 
 Texture2D gDiffuseMap : register(t0);
+Texture2D gNormal : register(t1);
+
+float3 Cameraloc : register(b1);
 
 SamplerState gsamPointWrap        : register(s0);
 SamplerState gsamPointClamp       : register(s1);
@@ -66,9 +69,13 @@ VertexOut VS(VertexIn vin)
 float4 PS(VertexOut pin) : SV_Target
 {
 	float4 diffuseAlbedo = gDiffuseMap.Sample(gsamAnisotropicWrap, pin.Texcoord);
-	pin.Color = pow((pin.Normal * 0.5f + 0.5f), 1/2.2f);
-	////pin.Color = (pin.Normal * 0.5f + 0.5f);
-	pin.Color = diffuseAlbedo;
 
-    return diffuseAlbedo;
+	//float4 test =pow((Cameraloc * 0.5f + 0.5f), 1/2.2f);
+	pin.Color = pow((pin.Normal * 0.5f + 0.5f), 1/2.2f);
+	//pin.Color = (pin.Normal * 0.5f + 0.5f);
+	float4 test = mul(diffuseAlbedo, float4(Cameraloc, 1.0f));
+
+  	return diffuseAlbedo;
+    //return pin.Color;
+	//return test;
 }

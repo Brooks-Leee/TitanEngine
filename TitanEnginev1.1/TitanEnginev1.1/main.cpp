@@ -1,5 +1,4 @@
 #include "stdafx.h"
-#include "AppDraw.h"
 #include "Scene.h"
 #include "TitanEngine.h"
 #include "Game.h"

@@ -3,7 +3,7 @@
 	"triangleNum": 2,
 	"indicesNum": 6,
 	"lODNum": 1,
-	"assetPath": "/Engine/BasicShapes/Plane.Plane",
+	"assetPath": "Plane.titan",
 	"vertices": [
 		{
 			"x": 50,

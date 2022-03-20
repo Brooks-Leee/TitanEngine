@@ -14,7 +14,6 @@ void Game::LoadAssets()
 	TitanEngine::Get()->GetResourceMgr()->LoadAllActorInMap();
 	TitanEngine::Get()->GetResourceMgr()->LoadTextures();
 
-	TitanEngine::Get()->GetRenderer()->UpdateScene();
 }
 
 void Game::Run()

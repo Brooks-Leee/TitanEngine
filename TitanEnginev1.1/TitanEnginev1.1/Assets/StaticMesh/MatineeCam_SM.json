@@ -3,7 +3,7 @@
 	"triangleNum": 4528,
 	"indicesNum": 13584,
 	"lODNum": 1,
-	"assetPath": "/Engine/EditorMeshes/MatineeCam_SM.MatineeCam_SM",
+	"assetPath": "MatineeCam_SM.titan",
 	"vertices": [
 		{
 			"x": -13.730928421020508,

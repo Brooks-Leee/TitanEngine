@@ -8,6 +8,7 @@ struct FSceneData
 {
 	FTransform Transform;
 	std::string AssetPath;
+	UINT HeapIndex;
 };
 
 class Scene

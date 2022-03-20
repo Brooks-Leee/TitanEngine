@@ -13,21 +13,15 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
     </Filter>
+    <Filter Include="DX12">
+      <UniqueIdentifier>{de98eb37-2ba9-4c81-9073-aa8be3f302d7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="d3dUtil.h">
-      <Filter>Public</Filter>
-    </ClInclude>
-    <ClInclude Include="d3dx12.h">
-      <Filter>Public</Filter>
-    </ClInclude>
     <ClInclude Include="GameTimer.h">
       <Filter>Public</Filter>
     </ClInclude>
     <ClInclude Include="MathHelper.h">
-      <Filter>Public</Filter>
-    </ClInclude>
-    <ClInclude Include="UploadBuffer.h">
       <Filter>Public</Filter>
     </ClInclude>
     <ClInclude Include="stdafx.h">
@@ -63,23 +57,59 @@
     <ClInclude Include="Win32Window.h">
       <Filter>Public</Filter>
     </ClInclude>
-    <ClInclude Include="DXRenderer.h">
-      <Filter>Public</Filter>
-    </ClInclude>
     <ClInclude Include="Input.h">
       <Filter>Public</Filter>
     </ClInclude>
     <ClInclude Include="WinInput.h">
       <Filter>Public</Filter>
     </ClInclude>
+    <ClInclude Include="Renderer.h">
+      <Filter>Public</Filter>
+    </ClInclude>
+    <ClInclude Include="FRHI.h">
+      <Filter>Public</Filter>
+    </ClInclude>
+    <ClInclude Include="TResource.h">
+      <Filter>Public</Filter>
+    </ClInclude>
+    <ClInclude Include="TTexTure.h">
+      <Filter>Public</Filter>
+    </ClInclude>
+    <ClInclude Include="TRHIResource.h">
+      <Filter>Public</Filter>
+    </ClInclude>
+    <ClInclude Include="TRHITexture.h">
+      <Filter>Public</Filter>
+    </ClInclude>
+    <ClInclude Include="GPUResourceManager.h">
+      <Filter>Public</Filter>
+    </ClInclude>
+    <ClInclude Include="d3dUtil.h">
+      <Filter>DX12</Filter>
+    </ClInclude>
+    <ClInclude Include="d3dx12.h">
+      <Filter>DX12</Filter>
+    </ClInclude>
     <ClInclude Include="DDSTextureLoader.h">
+      <Filter>DX12</Filter>
+    </ClInclude>
+    <ClInclude Include="FRHIDX12.h">
+      <Filter>DX12</Filter>
+    </ClInclude>
+    <ClInclude Include="TMeshBufferDX12.h">
+      <Filter>DX12</Filter>
+    </ClInclude>
+    <ClInclude Include="TTextureDX12.h">
+      <Filter>DX12</Filter>
+    </ClInclude>
+    <ClInclude Include="UploadBuffer.h">
+      <Filter>DX12</Filter>
+    </ClInclude>
+    <ClInclude Include="TMaterial.h">
       <Filter>Public</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="d3dUtil.cpp">
-      <Filter>Private</Filter>
-    </ClCompile>
     <ClCompile Include="GameTimer.cpp">
       <Filter>Private</Filter>
     </ClCompile>
@@ -116,16 +146,49 @@
     <ClCompile Include="Win32Window.cpp">
       <Filter>Private</Filter>
     </ClCompile>
-    <ClCompile Include="DXRenderer.cpp">
-      <Filter>Private</Filter>
-    </ClCompile>
     <ClCompile Include="Input.cpp">
       <Filter>Private</Filter>
     </ClCompile>
     <ClCompile Include="WinInput.cpp">
       <Filter>Private</Filter>
     </ClCompile>
+    <ClCompile Include="Renderer.cpp">
+      <Filter>Private</Filter>
+    </ClCompile>
+    <ClCompile Include="FRHI.cpp">
+      <Filter>Private</Filter>
+    </ClCompile>
+    <ClCompile Include="TResource.cpp">
+      <Filter>Private</Filter>
+    </ClCompile>
+    <ClCompile Include="TTexTure.cpp">
+      <Filter>Private</Filter>
+    </ClCompile>
+    <ClCompile Include="TRHIResource.cpp">
+      <Filter>Private</Filter>
+    </ClCompile>
+    <ClCompile Include="TRHITexture.cpp">
+      <Filter>Private</Filter>
+    </ClCompile>
+    <ClCompile Include="GPUResourceManager.cpp">
+      <Filter>Private</Filter>
+    </ClCompile>
     <ClCompile Include="DDSTextureLoader.cpp">
+      <Filter>DX12</Filter>
+    </ClCompile>
+    <ClCompile Include="d3dUtil.cpp">
+      <Filter>DX12</Filter>
+    </ClCompile>
+    <ClCompile Include="FRHIDX12.cpp">
+      <Filter>DX12</Filter>
+    </ClCompile>
+    <ClCompile Include="TMeshBufferDX12.cpp">
+      <Filter>DX12</Filter>
+    </ClCompile>
+    <ClCompile Include="TTextureDX12.cpp">
+      <Filter>DX12</Filter>
+    </ClCompile>
+    <ClCompile Include="TMaterial.cpp">
       <Filter>Private</Filter>
     </ClCompile>
   </ItemGroup>

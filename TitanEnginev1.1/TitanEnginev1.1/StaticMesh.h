@@ -1,6 +1,6 @@
 #pragma once
 #include "MyMath.h"
-
+#include "TResource.h"
 
 struct Vertex
 {
@@ -24,7 +24,7 @@ struct FMeshData
 };
 
 
-class StaticMesh
+class StaticMesh : public TResource
 {
 public:
 	FMeshData* GetStaticMesh();

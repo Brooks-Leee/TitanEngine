@@ -149,10 +149,10 @@ void Win32Window::CalculateFrameStat()
 		float fps = (float)frameCnt; // fps = frameCnt / 1
 		float mspf = 1000.0f / fps;
 
-		wstring fpsStr = to_wstring(fps);
-		wstring mspfStr = to_wstring(mspf);
+		std::wstring fpsStr = std::to_wstring(fps);
+		std::wstring mspfStr = std::to_wstring(mspf);
 
-		wstring windowText =
+		std::wstring windowText =
 			L"TitanEngine    fps: " + fpsStr +
 			L"   mspf: " + mspfStr;
 
