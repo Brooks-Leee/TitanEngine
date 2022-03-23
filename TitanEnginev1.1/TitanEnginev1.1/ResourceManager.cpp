@@ -1,8 +1,8 @@
 #include "stdafx.h"
 #include "ResourceManager.h"
 #include "TitanEngine.h"
-
-
+#include "TLight.h"
+#include "MathHelper.h"
 
 
 ResourceManager::ResourceManager()
@@ -13,6 +13,13 @@ ResourceManager::ResourceManager()
 ResourceManager::~ResourceManager()
 {
 
+}
+
+void ResourceManager::LoadAssests()
+{
+	LoadAllActorInMap();
+	LoadTextures();
+	LoadLights();
 }
 
 void ResourceManager::LoadAllActorInMap()
@@ -106,30 +113,6 @@ StaticMesh* ResourceManager::LoadStaticMesh(const std::string& FilePath)
 
 void ResourceManager::LoadTextures()
 {
-
-	//DXRenderer* renderer = TitanEngine::Get()->GetRenderer();
-	////renderer->mCommandList->Reset(renderer->mDirectCmdListAlloc.Get(), nullptr);
-	//renderer->ResetCommandList();
-
-	//auto waterTex = std::make_shared<Texture>();
-	//waterTex->Name = "waterTex";
-	//waterTex->Filename = L"Assets/Texture/water.dds";
-	//ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(renderer->md3dDevice.Get(), renderer->mCommandList.Get(), waterTex->Filename.c_str(), waterTex->Resource, waterTex->UploadHeap));
-
-	//auto rockTex = std::make_shared<Texture>();
-	//rockTex->Name = "rockTex";
-	//rockTex->Filename = L"Assets/Texture/rock.dds";
-	//ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(renderer->md3dDevice.Get(), renderer->mCommandList.Get(), rockTex->Filename.c_str(), rockTex->Resource, rockTex->UploadHeap));
-
-	//auto brickTex = std::make_shared<Texture>();
-	//brickTex->Name = "brickTex";
-	//brickTex->Filename = L"Assets/Texture/brick.dds";
-	//ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(renderer->md3dDevice.Get(), renderer->mCommandList.Get(), brickTex->Filename.c_str(), brickTex->Resource, brickTex->UploadHeap));
-
-	//mTextures[waterTex->Name] = std::move(waterTex);
-	//mTextures[rockTex->Name] = std::move(rockTex);
-	//mTextures[brickTex->Name] = std::move(brickTex);
-
 	auto waterTex = std::make_shared<TTexTure>();
 	waterTex->Name = "waterTex";
 	waterTex->Filename = L"Assets/Texture/water.dds";
@@ -145,6 +128,19 @@ void ResourceManager::LoadTextures()
 	mTextures.push_back(waterTex);
 	mTextures.push_back(rockTex);
 	mTextures.push_back(brickTex);
+}
+
+void ResourceManager::LoadLights()
+{	
+
+	Scene* scene = TitanEngine::Get()->GetSceneIns();
+	std::ifstream ifs("Assets/Lights/directionLight.titan", std::ios::binary);
+	if (ifs.is_open())
+	{
+		ifs.read((char*)&scene->light->LightColor, sizeof(glm::vec4));
+		ifs.read((char*)&scene->light->LightDirection, sizeof(glm::vec3));
+		ifs.read((char*)&scene->light->Intensity, sizeof(float));
+	}
 }
 
 std::map<std::string, FMeshData*> ResourceManager::getAllMeshData()

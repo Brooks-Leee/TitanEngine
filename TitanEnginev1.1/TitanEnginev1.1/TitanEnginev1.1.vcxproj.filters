@@ -108,6 +108,12 @@
     <ClInclude Include="TMaterial.h">
       <Filter>Public</Filter>
     </ClInclude>
+    <ClInclude Include="TLight.h">
+      <Filter>Public</Filter>
+    </ClInclude>
+    <ClInclude Include="ShadowMap.h">
+      <Filter>Public</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GameTimer.cpp">
@@ -189,6 +195,12 @@
       <Filter>DX12</Filter>
     </ClCompile>
     <ClCompile Include="TMaterial.cpp">
+      <Filter>Private</Filter>
+    </ClCompile>
+    <ClCompile Include="TLight.cpp">
+      <Filter>Private</Filter>
+    </ClCompile>
+    <ClCompile Include="ShadowMap.cpp">
       <Filter>Private</Filter>
     </ClCompile>
   </ItemGroup>

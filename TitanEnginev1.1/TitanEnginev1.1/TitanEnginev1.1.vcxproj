@@ -158,9 +158,11 @@
     <ClInclude Include="Scene.h" />
     <ClInclude Include="GameTimer.h" />
     <ClInclude Include="MyMath.h" />
+    <ClInclude Include="ShadowMap.h" />
     <ClInclude Include="StaticMesh.h" />
     <ClInclude Include="MathHelper.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="TLight.h" />
     <ClInclude Include="TMaterial.h" />
     <ClInclude Include="TRHIResource.h" />
     <ClInclude Include="TRHITexture.h" />
@@ -188,10 +190,12 @@
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="GameTimer.cpp" />
     <ClCompile Include="MathHelper.cpp" />
+    <ClCompile Include="ShadowMap.cpp" />
     <ClCompile Include="StaticMesh.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="TLight.cpp" />
     <ClCompile Include="TMaterial.cpp" />
     <ClCompile Include="TRHIResource.cpp" />
     <ClCompile Include="TRHITexture.cpp" />

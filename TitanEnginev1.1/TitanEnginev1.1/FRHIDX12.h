@@ -3,6 +3,7 @@
 #include "Scene.h"
 #include "stdafx.h"
 #include "TTextureDX12.h"
+#include "TMaterial.h"
 
 using Microsoft::WRL::ComPtr;
 using namespace std;
@@ -25,7 +26,7 @@ public:
 	virtual void InitRHI(Scene* scene) override;
 	virtual void CreateMeshBuffer(FMeshData* meshData) override;
 	virtual void CreateTexture(std::shared_ptr<TTexTure> Texture, UINT index) override;
-
+	virtual void CreateMaterials() override;
 	virtual void CreateConstantBuffer() override;
 	
 
@@ -34,7 +35,8 @@ public:
 	virtual void SetMeshBuffer() override;
 	virtual void SetRenderTarget() override;
 
-	virtual void UpdateConstantBuffer(FSceneData actor) override;
+	virtual void UpdateObjectCB(FSceneData actor) override;
+	virtual void UpdateMaterialCB() override;
  	virtual void Draw(FSceneData actor) override;
 	virtual void EndFrame() override;
 
@@ -45,7 +47,7 @@ public:
 	bool Initialize();
 
 public:
-	void UpdateConstantBuffer(const GameTimer& gt);
+	void UpdateObjectCB(const GameTimer& gt);
 	void Draw(const GameTimer& gt);
 
 	void OnResize();
@@ -125,16 +127,16 @@ private:
 
 	std::vector<ComPtr<ID3D12DescriptorHeap>> mCbvHeapArr;
 
+	Scene* mScene = nullptr;
 
 	std::map<std::string, int> mTexTableIndex;
 	std::map<std::string, std::shared_ptr<TTextureDX12>> mTextures;
-
-	Scene* mScene = nullptr;
 
 	std::unique_ptr<MeshGeometry> mGeo = nullptr;
 	std::vector<std::shared_ptr<MeshGeometry>> mGeoArr;
 	std::unordered_map<std::string, std::shared_ptr<MeshGeometry>> mGeoMap;
 
+	std::unordered_map<std::string, std::shared_ptr<TMaterial>> mMaterials;
 
 
 	ComPtr<ID3DBlob> mvsByteCode = nullptr;
@@ -146,6 +148,9 @@ private:
 
 
 	std::unique_ptr<UploadBuffer<ObjectConstants>> mObjectCB = nullptr;
+	std::unique_ptr<UploadBuffer<MaterialConstants>> mMaterialCB = nullptr;
+	UINT matCBByteSize = 0;
+
 	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> uploadBufferArr;
 
 	ComPtr<ID3D12PipelineState> mPSO = nullptr;

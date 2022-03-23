@@ -16,8 +16,13 @@ public:
 	~ResourceManager();
 
 public:
+
+	void LoadAssests();
+
 	void LoadAllActorInMap();
 	void LoadTextures();
+	void LoadLights();
+
 
 	StaticMesh* LoadStaticMesh(const std::string& FilePath);
 
@@ -28,7 +33,6 @@ public:
 
 private:
 	std::map<std::string, FMeshData*> mAllMeshData;
-	//std::unordered_map<std::string, std::shared_ptr<Texture>> mTextures;
 	std::vector<std::shared_ptr<TTexTure>> mTextures;
 };
 

@@ -22,7 +22,7 @@ cbuffer cbPerObject : register(b0)
 };
 
 Texture2D gDiffuseMap : register(t0);
-Texture2D gNormal : register(t1);
+//Texture2D gNormal : register(t1);
 
 float3 Cameraloc : register(b1);
 
@@ -32,6 +32,16 @@ SamplerState gsamLinearWrap       : register(s2);
 SamplerState gsamLinearClamp      : register(s3);
 SamplerState gsamAnisotropicWrap  : register(s4);
 SamplerState gsamAnisotropicClamp : register(s5);
+
+cbuffer cbMaterial : register(b2)
+{
+	float4   gDiffuseAlbedo;
+    float3   gFresnelR0;
+    float    gRoughness;
+}
+
+
+
 
 struct VertexIn
 {
@@ -70,12 +80,11 @@ float4 PS(VertexOut pin) : SV_Target
 {
 	float4 diffuseAlbedo = gDiffuseMap.Sample(gsamAnisotropicWrap, pin.Texcoord);
 
-	//float4 test =pow((Cameraloc * 0.5f + 0.5f), 1/2.2f);
 	pin.Color = pow((pin.Normal * 0.5f + 0.5f), 1/2.2f);
-	//pin.Color = (pin.Normal * 0.5f + 0.5f);
-	float4 test = mul(diffuseAlbedo, float4(Cameraloc, 1.0f));
+	float4 test = mul(diffuseAlbedo, gDiffuseAlbedo);
 
-  	return diffuseAlbedo;
+
+  	return diffuseAlbedo * gRoughness;
     //return pin.Color;
 	//return test;
 }

@@ -198,7 +198,7 @@ struct Light
 
 #define MaxLights 16
 
-struct MaterialConstants
+struct d3dMaterialConstants
 {
 	glm::vec4 DiffuseAlbedo = { 1.0f, 1.0f, 1.0f, 1.0f };
 	glm::vec3 FresnelR0 = { 0.01f, 0.01f, 0.01f };

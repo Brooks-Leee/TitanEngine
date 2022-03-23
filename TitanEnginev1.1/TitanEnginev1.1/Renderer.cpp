@@ -27,7 +27,8 @@ void Renderer::Run()
 	RHI->SetRenderTarget();
 	for (auto actor : Actors)
 	{
-		RHI->UpdateConstantBuffer(actor);
+		RHI->UpdateObjectCB(actor);
+		RHI->UpdateMaterialCB();
 		RHI->Draw(actor);
 	}
 	RHI->EndFrame();
@@ -42,7 +43,6 @@ void Renderer::UpdateScene()
 	RHI->CreateConstantBuffer();
 	for (UINT i = 0; i < textures.size(); i++)
 	{
-		
 		RHI->CreateTexture(textures[i], i);
 	}
 
@@ -51,6 +51,8 @@ void Renderer::UpdateScene()
 	{
 		RHI->CreateMeshBuffer(mesh.second);
 	}
+
+	RHI->CreateMaterials();
 
 
 

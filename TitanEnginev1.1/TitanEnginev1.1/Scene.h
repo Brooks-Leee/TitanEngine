@@ -3,6 +3,8 @@
 #include "StaticMesh.h"
 #include <map>
 #include "Camera.h"
+#include "TLight.h"
+
 
 struct FSceneData
 {
@@ -13,14 +15,16 @@ struct FSceneData
 
 class Scene
 {
+
 public:
-	void SpawnSphere();
-	void DestorySphere();
+	Scene();
+	~Scene();
 
 
 public:
 	Camera camera;
 	FSceneData SceneData;
 	std::vector<FSceneData> SceneDataArr;
+	TLight* light;
 };
 
