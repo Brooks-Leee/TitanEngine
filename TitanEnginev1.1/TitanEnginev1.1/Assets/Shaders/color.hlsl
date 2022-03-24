@@ -15,6 +15,8 @@
 cbuffer cbPerObject : register(b0)
 {
 	float4x4 gWorldViewProj; 
+	float4x4 gWorld; 
+	float4x4 gViewProj; 
 	float4x4 gLocation;
 	float4x4 gRotation;
 	float4x4 gScale;
@@ -40,7 +42,10 @@ cbuffer cbMaterial : register(b2)
     float    gRoughness;
 }
 
-
+cbuffer cbShadowPass : register(b3)
+{
+	float4x4 gLightViewProj;
+}
 
 
 struct VertexIn
@@ -58,7 +63,6 @@ struct VertexOut
 	float4 Normal: NORMAL;
 	float2 Texcoord : TEXCOORD;
 };
-
 
 
 VertexOut VS(VertexIn vin)
@@ -84,7 +88,7 @@ float4 PS(VertexOut pin) : SV_Target
 	float4 test = mul(diffuseAlbedo, gDiffuseAlbedo);
 
 
-  	return diffuseAlbedo * gRoughness;
+  	return diffuseAlbedo;
     //return pin.Color;
 	//return test;
 }

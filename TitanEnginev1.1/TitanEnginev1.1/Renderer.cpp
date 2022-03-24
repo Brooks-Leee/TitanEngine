@@ -3,7 +3,7 @@
 #include "FRHI.h"
 #include "TitanEngine.h"
 #include "GPUResourceManager.h"
-
+#include "GameTimer.h"
 
 Renderer::Renderer()
 {
@@ -24,6 +24,18 @@ void Renderer::Run()
 {
 	auto Actors = TitanEngine::Get()->GetSceneIns()->SceneDataArr;
 	
+	RHI->SetShadowMapTarget();
+	for (auto actor : Actors)
+	{
+		RHI->UpdateObjectCB(actor);
+		RHI->UpdateMaterialCB();
+		RHI->UpdateShadowPass(actor);
+		RHI->DrawShadowMap(actor);
+	}
+	RHI->EndSHadowMap();
+
+
+
 	RHI->SetRenderTarget();
 	for (auto actor : Actors)
 	{
@@ -53,7 +65,6 @@ void Renderer::UpdateScene()
 	}
 
 	RHI->CreateMaterials();
-
 
 
 }

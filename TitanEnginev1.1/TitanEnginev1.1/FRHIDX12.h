@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "TTextureDX12.h"
 #include "TMaterial.h"
+#include "ShadowMap.h"
 
 using Microsoft::WRL::ComPtr;
 using namespace std;
@@ -12,12 +13,37 @@ using namespace DirectX;
 struct ObjectConstants
 {
 	glm::mat4x4 WorldViewProj = MathHelper::Identity4x4glm();
+	glm::mat4x4 World = MathHelper::Identity4x4glm();
+	glm::mat4x4 ViewProj = MathHelper::Identity4x4glm();
 	glm::mat4x4 Location;
 	glm::mat4x4 Rotation;
 	glm::mat4x4 Scale;
 	float gTime;
 };
 
+struct ShadowPassConstants
+{	
+	//glm::mat4x4 View = MathHelper::Identity4x4glm();
+	//glm::mat4x4 InvView = MathHelper::Identity4x4glm();
+	//glm::mat4x4 Proj = MathHelper::Identity4x4glm();
+	//glm::mat4x4 InvProj = MathHelper::Identity4x4glm();
+	//glm::mat4x4 ViewProj = MathHelper::Identity4x4glm();
+	//glm::mat4x4 InvViewProj = MathHelper::Identity4x4glm();
+	//glm::mat4x4 ShadowTransform = MathHelper::Identity4x4glm();
+	//glm::vec3 EyePosW = { 0.0f, 0.0f, 0.0f };
+	//float cbPerObjectPad1 = 0.0f;
+	//glm::vec2 RenderTargetSize = { 0.0f, 0.0f };
+	//glm::vec2 InvRenderTargetSize = { 0.0f, 0.0f };
+	//float NearZ = 0.0f;
+	//float FarZ = 0.0f;
+	//float TotalTime = 0.0f;
+	//float DeltaTime = 0.0f;
+	//XMFLOAT4X4 lightViewProj;
+	//glm::vec3 fill;
+	glm::mat4 lightMVP;
+	
+	//DirectX::XMFLOAT4 AmbientLight = { 0.0f, 0.0f, 0.0f, 1.0f };
+};
 
 class FRHIDX12 : public FRHI
 {
@@ -33,14 +59,18 @@ public:
 	virtual void SetViewPort(float TopLeftX, float TopLeftY, float Width, float Height, float MinDepth, float MaxDepth) override;
 	virtual void SetScissorRects(int ClientWidth, int ClientHeight) override;
 	virtual void SetMeshBuffer() override;
-	virtual void SetRenderTarget() override;
 
 	virtual void UpdateObjectCB(FSceneData actor) override;
 	virtual void UpdateMaterialCB() override;
+	virtual void UpdateShadowPass(FSceneData actor) override;
+
+	virtual void SetRenderTarget() override;
  	virtual void Draw(FSceneData actor) override;
 	virtual void EndFrame() override;
 
-
+	virtual void SetShadowMapTarget()override;
+	virtual void DrawShadowMap(FSceneData actor) override;
+	virtual void EndSHadowMap() override;
 
 
 public:
@@ -103,6 +133,7 @@ public:
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mRtvHeap;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mDsvHeap;
 
+
 	D3D12_VIEWPORT mScreenViewport;
 	D3D12_RECT mScissorRect;
 
@@ -118,14 +149,14 @@ public:
 	int mClientHeight = 600;
 	glm::vec3 mCameraloc;
 
+	DirectX::BoundingSphere mSceneBounds;
+
 
 private:
 
 	ComPtr<ID3D12RootSignature> mRootSignature = nullptr;
 	ComPtr<ID3D12DescriptorHeap> mCbvSrvHeap = nullptr;
 	ComPtr<ID3D12DescriptorHeap> mSrvHeap = nullptr;
-
-	std::vector<ComPtr<ID3D12DescriptorHeap>> mCbvHeapArr;
 
 	Scene* mScene = nullptr;
 
@@ -138,22 +169,28 @@ private:
 
 	std::unordered_map<std::string, std::shared_ptr<TMaterial>> mMaterials;
 
+	std::unique_ptr<ShadowMap> mShadowMap = nullptr;
 
 	ComPtr<ID3DBlob> mvsByteCode = nullptr;
 	ComPtr<ID3DBlob> mpsByteCode = nullptr;
-	ComPtr<ID3DBlob> mvsByteCodeWPO = nullptr;
-	ComPtr<ID3DBlob> mpsByteCodeWPO = nullptr;
+	ComPtr<ID3DBlob> msmapVSByteCode = nullptr;
+	ComPtr<ID3DBlob> msmapPSByteCode = nullptr;
 
 	std::vector<D3D12_INPUT_ELEMENT_DESC> mInputLayout;
 
 
 	std::unique_ptr<UploadBuffer<ObjectConstants>> mObjectCB = nullptr;
 	std::unique_ptr<UploadBuffer<MaterialConstants>> mMaterialCB = nullptr;
+	std::unique_ptr<UploadBuffer<ShadowPassConstants>> mShadowPassCB = nullptr;
+
 	UINT matCBByteSize = 0;
+	UINT shadowCBByteSize = 0;
 
 	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> uploadBufferArr;
 
 	ComPtr<ID3D12PipelineState> mPSO = nullptr;
+	std::unordered_map<std::string, ComPtr<ID3D12PipelineState>> mPSOs;
+
 
 	glm::mat4x4 mWorld = MathHelper::Identity4x4glm();
 	glm::mat4x4 mView = MathHelper::Identity4x4glm();

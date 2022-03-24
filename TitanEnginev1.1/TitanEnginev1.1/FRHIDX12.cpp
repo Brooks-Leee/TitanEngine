@@ -3,7 +3,7 @@
 #include "Win32Window.h"
 #include "TitanEngine.h"
 #include "DDSTextureLoader.h"
-
+#include "TLight.h"
 
 
 void FRHIDX12::InitRHI(Scene* scene)
@@ -87,6 +87,7 @@ void FRHIDX12::CreateConstantBuffer()
 	mCurrentElementCount = (UINT)mScene->SceneDataArr.size();
 	mObjectCB = std::make_unique<UploadBuffer<ObjectConstants>>(md3dDevice.Get(), mCurrentElementCount, true);
 	mMaterialCB = std::make_unique<UploadBuffer<MaterialConstants>>(md3dDevice.Get(), 3, true);
+	mShadowPassCB = std::make_unique<UploadBuffer<ShadowPassConstants>>(md3dDevice.Get(), mCurrentElementCount, true);
 
 	UINT DescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
@@ -94,7 +95,7 @@ void FRHIDX12::CreateConstantBuffer()
 	// Constant buffers must be a multiple of the minimum hardware allocation size (usually 256 bytes)
 	UINT objCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
 	matCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(MaterialConstants));
-
+	shadowCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(ShadowPassConstants));
 
 	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
 
@@ -232,6 +233,11 @@ void FRHIDX12::UpdateObjectCB(FSceneData actor)
 	glm::mat4 proj = mProj;
 	glm::mat4 worldViewProj = proj * view * world;
 
+	mWorld = world;
+
+
+	objConstants.World = world;
+	objConstants.ViewProj = proj * view;
 	objConstants.WorldViewProj = glm::transpose(worldViewProj);
 	objConstants.gTime = mTimer.TotalTime();
 	objConstants.Location = location;
@@ -256,13 +262,71 @@ void FRHIDX12::UpdateMaterialCB()
 
 }
 
+void FRHIDX12::UpdateShadowPass(FSceneData actor)
+{
+	//TLight* light = TitanEngine::Get()->GetSceneIns()->light;
+		//glm::vec3 lightDir = light->LightDirection;
+
+	glm::vec3 lightPos = glm::vec3(2620.0f, 2450.0f, 1860.0f);
+	glm::vec3 TargetPos = glm::vec3(0.0f, 0.0f, 0.0f);
+	glm::vec3 lightUp = glm::vec3(0.0f, 0.0f, 1.0f);
+
+	glm::mat4 lightView = glm::lookAtLH(lightPos, TargetPos, lightUp);
+	glm::mat4 lightProj = glm::orthoLH_ZO(-3000.f, 4000.f, -2000.f, 4000.f, -1000.0f, 10000.f);
+
+	//glm::mat4 LightVP = glm::transpose(lightProj * lightView);
+
+
+	glm::mat4 LightVP = (lightProj * lightView);
+	glm::mat4 LightMVP = glm::transpose(LightVP * mWorld);
+
+	//	glm::mat4 TLightMVP = glm::transpose(LightMVP);
+		//XMVECTOR lightDir = XMLoadFloat3(&light->LightDirection);
+		//XMVECTOR lightPos = -2.0f * mSceneBounds.Radius * lightDir;
+		//XMVECTOR targetPos = XMLoadFloat3(&mSceneBounds.Center);
+		//XMVECTOR lightUp = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+		//XMMATRIX lightView = XMMatrixLookAtLH(lightPos, targetPos, lightUp);
+
+		//XMFLOAT3 sphereCenterLS;
+		//XMStoreFloat3(&sphereCenterLS, XMVector3TransformCoord(targetPos, lightView));
+
+		//// Ortho frustum in light space encloses scene.
+		//float l = sphereCenterLS.x - mSceneBounds.Radius;
+		//float b = sphereCenterLS.y - mSceneBounds.Radius;
+		//float n = sphereCenterLS.z - mSceneBounds.Radius;
+		//float r = sphereCenterLS.x + mSceneBounds.Radius;
+		//float f = sphereCenterLS.z + mSceneBounds.Radius;
+		//float t = sphereCenterLS.y + mSceneBounds.Radius;
+		//XMMATRIX lightProj = XMMatrixOrthographicOffCenterLH(-100.f, 100.f, -100.f, 100.f, 100.f, 10000.f);
+
+		//// Transform NDC space [-1,+1]^2 to texture space [0,1]^2
+		//XMMATRIX T(
+		//	0.5f, 0.0f, 0.0f, 0.0f,
+		//	0.0f, -0.5f, 0.0f, 0.0f,
+		//	0.0f, 0.0f, 1.0f, 0.0f,
+		//	0.5f, 0.5f, 0.0f, 1.0f);
+
+		//XMMATRIX ViewProj = lightView * lightProj * T;
+		//XMFLOAT4X4 LightViewProj;
+
+		//XMStoreFloat4x4(&LightViewProj, XMMatrixTranspose(ViewProj));
+
+	ShadowPassConstants ShadowConstant;
+	ShadowConstant.lightMVP = LightMVP;
+
+	/*glm::mat4 testmat = MathHelper::testglm();
+	ShadowConstant.lightMVP = testmat;*/
+
+	mShadowPassCB->CopyData(actor.HeapIndex, ShadowConstant);
+}
+
 
 
 void FRHIDX12::SetRenderTarget()
 {
 	ThrowIfFailed(mDirectCmdListAlloc->Reset());
 
-	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSO.Get()));
+	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSOs["opaque"].Get()));
 
 	mCommandList->RSSetViewports(1, &mScreenViewport);
 	mCommandList->RSSetScissorRects(1, &mScissorRect);
@@ -283,9 +347,58 @@ void FRHIDX12::SetRenderTarget()
 
 	mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
 
-	//ThrowIfFailed(mCommandList->Close());
-	//ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
-	//mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+}
+
+void FRHIDX12::SetShadowMapTarget()
+{
+	ThrowIfFailed(mDirectCmdListAlloc->Reset());
+	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSOs["opaque"].Get()));
+	ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvSrvHeap.Get() };
+	mCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+	mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
+	mCommandList->RSSetViewports(1, &mShadowMap->Viewport());
+	mCommandList->RSSetScissorRects(1, &mShadowMap->ScissorRect());
+
+	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mShadowMap->Resource(),
+		D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_DEPTH_WRITE));
+	mCommandList->ClearDepthStencilView(mShadowMap->Dsv(),
+		D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
+	mCommandList->OMSetRenderTargets(0, nullptr, false, &mShadowMap->Dsv());
+	mCommandList->SetPipelineState(mPSOs["shadow_opaque"].Get());
+
+
+}
+
+
+void FRHIDX12::DrawShadowMap(FSceneData actor)
+{
+	auto geo = mGeoMap[actor.AssetPath];
+	mCommandList->IASetVertexBuffers(0, 1, &geo->VertexBufferView());
+	mCommandList->IASetIndexBuffer(&geo->IndexBufferView());
+	mCommandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	auto heapGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mCbvSrvHeap->GetGPUDescriptorHandleForHeapStart());
+	heapGPUHandle.Offset(actor.HeapIndex, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+	mCommandList->SetGraphicsRootDescriptorTable(0, heapGPUHandle);
+
+
+	auto shadowPassCB = mShadowPassCB->Resource();
+	D3D12_GPU_VIRTUAL_ADDRESS shadowPassCBAddress = shadowPassCB->GetGPUVirtualAddress() + actor.HeapIndex * shadowCBByteSize;
+	mCommandList->SetGraphicsRootConstantBufferView(4, shadowPassCBAddress);
+
+	mCommandList->DrawIndexedInstanced(geo->DrawArgs[geo->Name].IndexCount, 1, 0, 0, 0);
+
+
+}
+
+void FRHIDX12::EndSHadowMap()
+{
+	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mShadowMap->Resource(),
+		D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_GENERIC_READ));
+	ThrowIfFailed(mCommandList->Close());
+	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
+	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+	FlushCommandQueue();
 
 }
 
@@ -303,13 +416,11 @@ void FRHIDX12::Draw(FSceneData actor)
 	mCommandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 
+
 	auto heapGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mCbvSrvHeap->GetGPUDescriptorHandleForHeapStart());
 	heapGPUHandle.Offset(actor.HeapIndex, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
 	mCommandList->SetGraphicsRootDescriptorTable(0, heapGPUHandle);
 
-	//heapGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mCbvSrvHeap->GetGPUDescriptorHandleForHeapStart());
-	//heapGPUHandle.Offset(9, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
-	//mCommandList->SetGraphicsRootDescriptorTable(1, heapGPUHandle);
 
 	if (geo->Name == "Plane.titan")
 	{
@@ -338,27 +449,11 @@ void FRHIDX12::Draw(FSceneData actor)
 	}
 
 	
-
 	mCommandList->SetGraphicsRoot32BitConstants(2, 3, &mCameraloc, 0);
 
 	mCommandList->DrawIndexedInstanced(geo->DrawArgs[geo->Name].IndexCount, 1, 0, 0, 0);
 
-
-	//mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
-	//	D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
-
-	//ThrowIfFailed(mCommandList->Close());
-	//ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
-	//mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-
-	//ThrowIfFailed(mSwapChain->Present(0, 0));
-	//mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
-
-	//// Wait until frame commands are complete.  This waiting is inefficient and is
-	//// done for simplicity.  Later we will show how to organize our rendering code
-	//// so we do not have to wait per frame.
-
-	//FlushCommandQueue();
+	
 
 }
 
@@ -386,6 +481,8 @@ void FRHIDX12::EndFrame()
 
 
 
+
+
 bool FRHIDX12::Initialize()
 {
 	if (!InitDirect3D())
@@ -393,9 +490,13 @@ bool FRHIDX12::Initialize()
 
 	OnResize();
 
-	//BuildRootSignature();
+	//RootSignature();
 	//BuildShadersAndInputLayout();
 	//BuildPSO();
+	mShadowMap = std::make_unique<ShadowMap>(md3dDevice.Get(), 2048, 2048);
+	mSceneBounds.Center = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	mSceneBounds.Radius = sqrtf(3000000);
+
 	BuildDescriptorHeaps();
 	BuildRootSignature();
 	BuildShadersAndInputLayout();
@@ -635,7 +736,7 @@ void FRHIDX12::CreateRtvAndDsvDescriptorHeaps()
 
 
 	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc;
-	dsvHeapDesc.NumDescriptors = 1;
+	dsvHeapDesc.NumDescriptors = 2;
 	dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
 	dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	dsvHeapDesc.NodeMask = 0;
@@ -672,7 +773,6 @@ void FRHIDX12::BuildDescriptorHeaps()
 {
 	D3D12_DESCRIPTOR_HEAP_DESC cbvAndsrvDesc;
 	//mCurrentElementCount = (UINT)mScene->SceneDataArr.size();
-	// NumDescriptors should be the Actor num
 	cbvAndsrvDesc.NumDescriptors = 100;
 	cbvAndsrvDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	cbvAndsrvDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
@@ -680,6 +780,18 @@ void FRHIDX12::BuildDescriptorHeaps()
 
 	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&cbvAndsrvDesc, IID_PPV_ARGS(&mCbvSrvHeap)));
 
+	// allocate heap memory for shadow map pass
+	auto CbvSrvCPUHeapStart = mCbvSrvHeap->GetCPUDescriptorHandleForHeapStart();
+	auto CbvSrvGPUHeapStart = mCbvSrvHeap->GetGPUDescriptorHandleForHeapStart();
+	auto DsvCPUStart = mDsvHeap->GetCPUDescriptorHandleForHeapStart();
+
+	UINT descriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	UINT dsvDesSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+
+	mShadowMap->BuildDescriptors(
+		CD3DX12_CPU_DESCRIPTOR_HANDLE(CbvSrvCPUHeapStart, 50, descriptorSize),
+		CD3DX12_GPU_DESCRIPTOR_HANDLE(CbvSrvGPUHeapStart, 50, descriptorSize),
+		CD3DX12_CPU_DESCRIPTOR_HANDLE(DsvCPUStart, 1, dsvDesSize));
 }
 
 void FRHIDX12::BuildDescriptor()
@@ -761,7 +873,7 @@ void FRHIDX12::BuildRootSignature()
 
 
 
-	CD3DX12_ROOT_PARAMETER slotRootParameter[4]; 
+	CD3DX12_ROOT_PARAMETER slotRootParameter[5]; 
 	slotRootParameter[0].InitAsDescriptorTable(1, &cbvTable);
 	slotRootParameter[1].InitAsDescriptorTable(1, &texTable, D3D12_SHADER_VISIBILITY_PIXEL);
 
@@ -769,12 +881,12 @@ void FRHIDX12::BuildRootSignature()
 	slotRootParameter[2].InitAsConstants(3, 1, 0);
 	// Material constant buffer
 	slotRootParameter[3].InitAsConstantBufferView(2);
-
-
+	// shadow map constant buffer
+	slotRootParameter[4].InitAsConstantBufferView(3);
 
 	auto staticSamplers = GetStaticSamplers();
 	// A root signature is an array of root parameters.
-	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(4, slotRootParameter, (UINT)staticSamplers.size(), staticSamplers.data(),
+	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(5, slotRootParameter, (UINT)staticSamplers.size(), staticSamplers.data(),
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
 	// create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer
@@ -803,6 +915,10 @@ void FRHIDX12::BuildShadersAndInputLayout()
 
 	mvsByteCode = d3dUtil::CompileShader(L"Assets\\Shaders\\color.hlsl", nullptr, "VS", "vs_5_0");
 	mpsByteCode = d3dUtil::CompileShader(L"Assets\\Shaders\\color.hlsl", nullptr, "PS", "ps_5_0");
+
+	msmapVSByteCode = d3dUtil::CompileShader(L"Assets\\Shaders\\shadowmap.hlsl", nullptr, "VS", "vs_5_0");
+	//msmapVSByteCode = d3dUtil::CompileShader(L"Assets\\Shaders\\shadowmap.hlsl", nullptr, "PS", "vs_5_0");
+
 
 	mInputLayout =
 	{
@@ -843,7 +959,28 @@ void FRHIDX12::BuildPSO()
 	psoDesc.SampleDesc.Count = m4xMsaaState ? 4 : 1;
 	psoDesc.SampleDesc.Quality = m4xMsaaState ? (m4xMsaaQuality - 1) : 0;
 	psoDesc.DSVFormat = mDepthStencilFormat;
-	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&mPSO)));
+	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&mPSOs["opaque"])));
+
+
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC smapPsoDesc = psoDesc;
+	//smapPsoDesc.RasterizerState.DepthBias = 100000;
+	//smapPsoDesc.RasterizerState.DepthBiasClamp = 0.0f;
+	//smapPsoDesc.RasterizerState.SlopeScaledDepthBias = 1.0f;
+	smapPsoDesc.pRootSignature = mRootSignature.Get();
+
+	smapPsoDesc.VS = 
+	{
+		reinterpret_cast<BYTE*>(msmapVSByteCode->GetBufferPointer()), msmapVSByteCode->GetBufferSize()
+	};
+	//smapPsoDesc.PS = 
+	//{
+	//	reinterpret_cast<BYTE*>(msmapPSByteCode->GetBufferPointer()), msmapPSByteCode->GetBufferSize()
+	//};
+	
+	smapPsoDesc.RTVFormats[0] = DXGI_FORMAT_UNKNOWN;
+	smapPsoDesc.NumRenderTargets = 0;
+	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&smapPsoDesc, IID_PPV_ARGS(&mPSOs["shadow_opaque"])));
+
 }
 
 

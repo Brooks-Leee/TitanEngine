@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Windows.h>
-//#include <DirectXMath.h>
+#include <DirectXMath.h>
 #include <cstdint>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -99,7 +99,7 @@ public:
 	//}
 
 
-    /*static DirectX::XMFLOAT4X4 Identity4x4()
+    static DirectX::XMFLOAT4X4 Identity4x4()
     {
         static DirectX::XMFLOAT4X4 I(
             1.0f, 0.0f, 0.0f, 0.0f,
@@ -108,7 +108,7 @@ public:
             0.0f, 0.0f, 0.0f, 1.0f);
 
         return I;
-    }*/
+    }
 
 	static glm::mat4x4 Identity4x4glm()
 	{
@@ -117,6 +117,16 @@ public:
 			0.0f, 1.0f, 0.0f, 0.0f,
 			0.0f, 0.0f, 1.0f, 0.0f,
 			0.0f, 0.0f, 0.0f, 1.0f);
+		return I;
+	}
+
+	static glm::mat4x4 testglm()
+	{
+		static glm::mat4x4 I(
+			1.0f, 2.0f, 3.0f, 4.0f,
+			5.0f, 1.0f, 0.0f, 0.0f,
+			10.0f, 0.0f, 1.0f, 0.0f,
+			20.0f, 0.0f, 0.0f, 1.0f);
 		return I;
 	}
 
