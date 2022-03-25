@@ -233,11 +233,11 @@ void FRHIDX12::UpdateObjectCB(FSceneData actor)
 	glm::mat4 proj = mProj;
 	glm::mat4 worldViewProj = proj * view * world;
 
-	mWorld = world;
+	mWorld = glm::transpose(world);
 
 
-	objConstants.World = world;
-	objConstants.ViewProj = proj * view;
+	objConstants.World = mWorld;
+	objConstants.ViewProj = glm::transpose(proj * view);
 	objConstants.WorldViewProj = glm::transpose(worldViewProj);
 	objConstants.gTime = mTimer.TotalTime();
 	objConstants.Location = location;
@@ -277,8 +277,11 @@ void FRHIDX12::UpdateShadowPass(FSceneData actor)
 	//glm::mat4 LightVP = glm::transpose(lightProj * lightView);
 
 
-	glm::mat4 LightVP = (lightProj * lightView);
-	glm::mat4 LightMVP = glm::transpose(LightVP * mWorld);
+	glm::mat4 LightVP = glm::transpose(lightProj * lightView);
+	//glm::mat4 LightMVP = glm::transpose(LightVP * mWorld);
+
+
+
 
 	//	glm::mat4 TLightMVP = glm::transpose(LightMVP);
 		//XMVECTOR lightDir = XMLoadFloat3(&light->LightDirection);
@@ -312,21 +315,23 @@ void FRHIDX12::UpdateShadowPass(FSceneData actor)
 		//XMStoreFloat4x4(&LightViewProj, XMMatrixTranspose(ViewProj));
 
 	ShadowPassConstants ShadowConstant;
-	ShadowConstant.lightMVP = LightMVP;
+	ShadowConstant.lightMVP = LightVP;
 
 	/*glm::mat4 testmat = MathHelper::testglm();
 	ShadowConstant.lightMVP = testmat;*/
 
-	mShadowPassCB->CopyData(actor.HeapIndex, ShadowConstant);
+	//mShadowPassCB->CopyData(actor.HeapIndex, ShadowConstant);
+	mShadowPassCB->CopyData(0, ShadowConstant);
 }
 
 
 
 void FRHIDX12::SetRenderTarget()
 {
-	ThrowIfFailed(mDirectCmdListAlloc->Reset());
+	//ThrowIfFailed(mDirectCmdListAlloc->Reset());
 
-	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSOs["opaque"].Get()));
+	//ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSOs["opaque"].Get()));
+	mCommandList->SetPipelineState(mPSOs["opaque"].Get());
 
 	mCommandList->RSSetViewports(1, &mScreenViewport);
 	mCommandList->RSSetScissorRects(1, &mScissorRect);
@@ -347,6 +352,9 @@ void FRHIDX12::SetRenderTarget()
 
 	mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
 
+	auto shadowPassCB = mShadowPassCB->Resource();
+	D3D12_GPU_VIRTUAL_ADDRESS shadowPassCBAddress = shadowPassCB->GetGPUVirtualAddress();
+	mCommandList->SetGraphicsRootConstantBufferView(4, shadowPassCBAddress);
 }
 
 void FRHIDX12::SetShadowMapTarget()
@@ -383,7 +391,8 @@ void FRHIDX12::DrawShadowMap(FSceneData actor)
 
 
 	auto shadowPassCB = mShadowPassCB->Resource();
-	D3D12_GPU_VIRTUAL_ADDRESS shadowPassCBAddress = shadowPassCB->GetGPUVirtualAddress() + actor.HeapIndex * shadowCBByteSize;
+	//D3D12_GPU_VIRTUAL_ADDRESS shadowPassCBAddress = shadowPassCB->GetGPUVirtualAddress() + actor.HeapIndex * shadowCBByteSize;
+	D3D12_GPU_VIRTUAL_ADDRESS shadowPassCBAddress = shadowPassCB->GetGPUVirtualAddress();
 	mCommandList->SetGraphicsRootConstantBufferView(4, shadowPassCBAddress);
 
 	mCommandList->DrawIndexedInstanced(geo->DrawArgs[geo->Name].IndexCount, 1, 0, 0, 0);
@@ -395,11 +404,6 @@ void FRHIDX12::EndSHadowMap()
 {
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mShadowMap->Resource(),
 		D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_GENERIC_READ));
-	ThrowIfFailed(mCommandList->Close());
-	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
-	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-	FlushCommandQueue();
-
 }
 
 
@@ -420,6 +424,10 @@ void FRHIDX12::Draw(FSceneData actor)
 	auto heapGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mCbvSrvHeap->GetGPUDescriptorHandleForHeapStart());
 	heapGPUHandle.Offset(actor.HeapIndex, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
 	mCommandList->SetGraphicsRootDescriptorTable(0, heapGPUHandle);
+
+	auto shadowMapHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mShadowMap->Srv());
+	mCommandList->SetGraphicsRootDescriptorTable(5, shadowMapHandle);
+
 
 
 	if (geo->Name == "Plane.titan")
@@ -868,25 +876,28 @@ void FRHIDX12::BuildRootSignature()
 	texTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
 	CD3DX12_DESCRIPTOR_RANGE cbvTable;
 	cbvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
+	CD3DX12_DESCRIPTOR_RANGE shadowMapTable;
+	shadowMapTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
 	//CD3DX12_DESCRIPTOR_RANGE normalTable;
 	//normalTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
 
 
 
-	CD3DX12_ROOT_PARAMETER slotRootParameter[5]; 
+	CD3DX12_ROOT_PARAMETER slotRootParameter[6]; 
 	slotRootParameter[0].InitAsDescriptorTable(1, &cbvTable);
 	slotRootParameter[1].InitAsDescriptorTable(1, &texTable, D3D12_SHADER_VISIBILITY_PIXEL);
-
 	// camera location
 	slotRootParameter[2].InitAsConstants(3, 1, 0);
 	// Material constant buffer
 	slotRootParameter[3].InitAsConstantBufferView(2);
 	// shadow map constant buffer
 	slotRootParameter[4].InitAsConstantBufferView(3);
+	slotRootParameter[5].InitAsDescriptorTable(1, &shadowMapTable);
+
 
 	auto staticSamplers = GetStaticSamplers();
 	// A root signature is an array of root parameters.
-	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(5, slotRootParameter, (UINT)staticSamplers.size(), staticSamplers.data(),
+	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(6, slotRootParameter, (UINT)staticSamplers.size(), staticSamplers.data(),
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
 	// create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer
@@ -986,6 +997,8 @@ void FRHIDX12::BuildPSO()
 
 
 
+
+
 ID3D12Resource* FRHIDX12::CurrentBackBuffer() const
 {
 	return mSwapChainBuffer[mCurrBackBuffer].Get();
@@ -1004,7 +1017,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE FRHIDX12::DepthStencilView() const
 	return mDsvHeap->GetCPUDescriptorHandleForHeapStart();
 }
 
-std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> FRHIDX12::GetStaticSamplers()
+std::array<const CD3DX12_STATIC_SAMPLER_DESC, 7> FRHIDX12::GetStaticSamplers()
 {
 	// Applications usually only need a handful of samplers.  So just define them all up front
 	// and keep them available as part of the root signature.  
@@ -1055,10 +1068,21 @@ std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> FRHIDX12::GetStaticSamplers()
 		0.0f,                              // mipLODBias
 		8);                                // maxAnisotropy
 
+	const CD3DX12_STATIC_SAMPLER_DESC shadow(
+		6, // shaderRegister
+		D3D12_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT, // filter
+		D3D12_TEXTURE_ADDRESS_MODE_BORDER,  // addressU
+		D3D12_TEXTURE_ADDRESS_MODE_BORDER,  // addressV
+		D3D12_TEXTURE_ADDRESS_MODE_BORDER,  // addressW
+		0.0f,                               // mipLODBias
+		16,                                 // maxAnisotropy
+		D3D12_COMPARISON_FUNC_LESS_EQUAL,
+		D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK);
+
 	return {
 		pointWrap, pointClamp,
 		linearWrap, linearClamp,
-		anisotropicWrap, anisotropicClamp };
+		anisotropicWrap, anisotropicClamp, shadow };
 }
 
 void FRHIDX12::ResetCommandList()
