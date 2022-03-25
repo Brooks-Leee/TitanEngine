@@ -264,63 +264,49 @@ void FRHIDX12::UpdateMaterialCB()
 
 void FRHIDX12::UpdateShadowPass(FSceneData actor)
 {
-	//TLight* light = TitanEngine::Get()->GetSceneIns()->light;
-		//glm::vec3 lightDir = light->LightDirection;
+	TLight* light = TitanEngine::Get()->GetSceneIns()->light;
+	glm::vec3 lightDir = light->LightDirection;
 
-	glm::vec3 lightPos = glm::vec3(2620.0f, 2450.0f, 1860.0f);
+	float Radius = 3000;
+	glm::vec3 lightPos = -2.0f * Radius * lightDir;
+	glm::mat4x4 lightView = glm::lookAtLH(lightPos, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+	glm::vec3 sphereCenterLS = MathHelper::Vector3TransformCoord(glm::vec3(0.0f, 0.0f, 0.0f), lightView);
+
+	float l = sphereCenterLS.x - Radius;
+	float b = sphereCenterLS.y - Radius;
+	float n = sphereCenterLS.z - Radius;
+	float r = sphereCenterLS.x + Radius;
+	float t = sphereCenterLS.y + Radius;
+	float f = sphereCenterLS.z + Radius;
+
+
+	glm::mat4x4 lightProj = glm::orthoLH_ZO(l, r, b, t, n, f);
+
+
+	/*glm::vec3 lightPos = glm::vec3(2620.0f, 2450.0f, 1860.0f);
 	glm::vec3 TargetPos = glm::vec3(0.0f, 0.0f, 0.0f);
-	glm::vec3 lightUp = glm::vec3(0.0f, 0.0f, 1.0f);
+	glm::vec3 lightUp = glm::vec3(0.0f, 0.0f, 1.0f);*/
 
-	glm::mat4 lightView = glm::lookAtLH(lightPos, TargetPos, lightUp);
-	glm::mat4 lightProj = glm::orthoLH_ZO(-3000.f, 4000.f, -2000.f, 4000.f, -1000.0f, 10000.f);
+	/*glm::mat4 lightView = glm::lookAtLH(lightPos, TargetPos, lightUp);
+	glm::mat4 lightProj = glm::orthoLH_ZO(-3000.0f, 3000.f, -3000.0f, 3000.f, -1000.0f, 10000.f);*/
 
 	//glm::mat4 LightVP = glm::transpose(lightProj * lightView);
 
-
-	glm::mat4 LightVP = glm::transpose(lightProj * lightView);
-	//glm::mat4 LightMVP = glm::transpose(LightVP * mWorld);
-
-
-
-
-	//	glm::mat4 TLightMVP = glm::transpose(LightMVP);
-		//XMVECTOR lightDir = XMLoadFloat3(&light->LightDirection);
-		//XMVECTOR lightPos = -2.0f * mSceneBounds.Radius * lightDir;
-		//XMVECTOR targetPos = XMLoadFloat3(&mSceneBounds.Center);
-		//XMVECTOR lightUp = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-		//XMMATRIX lightView = XMMatrixLookAtLH(lightPos, targetPos, lightUp);
-
-		//XMFLOAT3 sphereCenterLS;
-		//XMStoreFloat3(&sphereCenterLS, XMVector3TransformCoord(targetPos, lightView));
-
-		//// Ortho frustum in light space encloses scene.
-		//float l = sphereCenterLS.x - mSceneBounds.Radius;
-		//float b = sphereCenterLS.y - mSceneBounds.Radius;
-		//float n = sphereCenterLS.z - mSceneBounds.Radius;
-		//float r = sphereCenterLS.x + mSceneBounds.Radius;
-		//float f = sphereCenterLS.z + mSceneBounds.Radius;
-		//float t = sphereCenterLS.y + mSceneBounds.Radius;
-		//XMMATRIX lightProj = XMMatrixOrthographicOffCenterLH(-100.f, 100.f, -100.f, 100.f, 100.f, 10000.f);
-
-		//// Transform NDC space [-1,+1]^2 to texture space [0,1]^2
-		//XMMATRIX T(
-		//	0.5f, 0.0f, 0.0f, 0.0f,
-		//	0.0f, -0.5f, 0.0f, 0.0f,
-		//	0.0f, 0.0f, 1.0f, 0.0f,
-		//	0.5f, 0.5f, 0.0f, 1.0f);
-
-		//XMMATRIX ViewProj = lightView * lightProj * T;
-		//XMFLOAT4X4 LightViewProj;
-
-		//XMStoreFloat4x4(&LightViewProj, XMMatrixTranspose(ViewProj));
+	glm::mat4 T(
+		0.5f, 0.0f, 0.0f, 0.0f,
+		0.0f, -0.5f, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f,
+		0.5f, 0.5f, 0.0f, 1.0f);
+	glm::mat4 S = lightProj * lightView;
+	glm::mat4 LightVP = glm::transpose(S);
+	glm::mat4 LightTVP = glm::transpose(T * S);
+	
 
 	ShadowPassConstants ShadowConstant;
-	ShadowConstant.lightMVP = LightVP;
+	ShadowConstant.lightVP = LightVP;
+	ShadowConstant.lightTVP = LightTVP;
 
-	/*glm::mat4 testmat = MathHelper::testglm();
-	ShadowConstant.lightMVP = testmat;*/
-
-	//mShadowPassCB->CopyData(actor.HeapIndex, ShadowConstant);
 	mShadowPassCB->CopyData(0, ShadowConstant);
 }
 
@@ -974,9 +960,9 @@ void FRHIDX12::BuildPSO()
 
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC smapPsoDesc = psoDesc;
-	//smapPsoDesc.RasterizerState.DepthBias = 100000;
-	//smapPsoDesc.RasterizerState.DepthBiasClamp = 0.0f;
-	//smapPsoDesc.RasterizerState.SlopeScaledDepthBias = 1.0f;
+	smapPsoDesc.RasterizerState.DepthBias = 100000;
+	smapPsoDesc.RasterizerState.DepthBiasClamp = 0.0f;
+	smapPsoDesc.RasterizerState.SlopeScaledDepthBias = 1.0f;
 	smapPsoDesc.pRootSignature = mRootSignature.Get();
 
 	smapPsoDesc.VS = 

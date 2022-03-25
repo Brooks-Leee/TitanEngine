@@ -40,8 +40,8 @@ struct ShadowPassConstants
 	//float DeltaTime = 0.0f;
 	//XMFLOAT4X4 lightViewProj;
 	//glm::vec3 fill;
-	glm::mat4 lightMVP;
-	
+	glm::mat4 lightVP;
+	glm::mat4 lightTVP;
 	//DirectX::XMFLOAT4 AmbientLight = { 0.0f, 0.0f, 0.0f, 1.0f };
 };
 

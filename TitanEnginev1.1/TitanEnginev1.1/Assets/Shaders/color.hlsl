@@ -49,6 +49,7 @@ cbuffer cbMaterial : register(b2)
 cbuffer cbShadowPass : register(b3)
 {
 	float4x4 gLightViewProj;
+	float4x4 gLightTVP;
 }
 
 
@@ -86,6 +87,39 @@ float CalcShadow(float4 shadowPosH)
 
 }
 
+float CalcShadowFactor(float4 shadowPosH)
+{
+    // Complete projection by doing division by w.
+    shadowPosH.xyz /= shadowPosH.w;
+
+    // Depth in NDC space.
+    float depth = shadowPosH.z;
+
+    uint width, height, numMips;
+    gShadowMap.GetDimensions(0, width, height, numMips);
+
+    // Texel size.
+    float dx = 1.0f / (float)width;
+
+    float percentLit = 0.0f;
+    const float2 offsets[9] =
+    {
+        float2(-dx,  -dx), float2(0.0f,  -dx), float2(dx,  -dx),
+        float2(-dx, 0.0f), float2(0.0f, 0.0f), float2(dx, 0.0f),
+        float2(-dx,  +dx), float2(0.0f,  +dx), float2(dx,  +dx)
+    };
+
+    [unroll]
+    for(int i = 0; i < 9; ++i)
+    {
+        percentLit += gShadowMap.SampleCmpLevelZero(gsamShadow,
+            shadowPosH.xy + offsets[i], depth).r;
+    }
+    
+    return percentLit / 9.0f;
+}
+
+
 VertexOut VS(VertexIn vin)
 {
 	VertexOut vout;
@@ -101,7 +135,7 @@ VertexOut VS(VertexIn vin)
 	vout.Color = vin.Color;
 	vout.Normal = mul(gRotation, vin.Normal);
 
-	vout.ShadowPosH = mul(PosW, gLightViewProj);
+	vout.ShadowPosH = mul(PosW, gLightTVP);
 
     return vout;
 }
@@ -113,18 +147,19 @@ float4 PS(VertexOut pin) : SV_Target
 	float4 AmbientLight = {1.0f, 0.8f, 1.0f, 1.0f};
 	float4 ambient = diffuseAlbedo;
 
-  //  float3 shadowFactor = float3(1.0f, 1.0f, 1.0f);
-    float shadowFactor = CalcShadow(pin.ShadowPosH);
+//   float shadowFactor = CalcShadow(pin.ShadowPosH);
+    float shadowFactor = CalcShadowFactor(pin.ShadowPosH);
 
-	float4 colorshadow = {0 , 0 ,0, 0};
 	// normal color
 	pin.Color = pow((pin.Normal * 0.5f + 0.5f), 1/2.2f);
 	float4 test = mul(diffuseAlbedo, gDiffuseAlbedo);
-	if(shadowFactor == 1)
-	{
-		ambient = 0;
-	}
-  	return ambient;
+	// if(shadowFactor == 0)
+	// {
+	// 	ambient = 0;
+	// }
+
+
+  	return ambient * (shadowFactor + 0.1);
     //return pin.Color;
 	//return test;
 
