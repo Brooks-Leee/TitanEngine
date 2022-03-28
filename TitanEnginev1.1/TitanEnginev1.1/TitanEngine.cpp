@@ -22,7 +22,7 @@ TitanEngine::~TitanEngine()
 
 bool TitanEngine::Init()
 {
-
+	mTimer.Reset();
 	WindowIns = Window::Create();
 	WindowIns->initWindow();
 

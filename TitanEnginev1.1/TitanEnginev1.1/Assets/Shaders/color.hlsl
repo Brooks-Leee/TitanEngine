@@ -147,7 +147,7 @@ float4 PS(VertexOut pin) : SV_Target
 	float4 AmbientLight = {1.0f, 0.8f, 1.0f, 1.0f};
 	float4 ambient = diffuseAlbedo;
 
-//   float shadowFactor = CalcShadow(pin.ShadowPosH);
+  //	float shadowFactor = CalcShadow(pin.ShadowPosH);
     float shadowFactor = CalcShadowFactor(pin.ShadowPosH);
 
 	// normal color

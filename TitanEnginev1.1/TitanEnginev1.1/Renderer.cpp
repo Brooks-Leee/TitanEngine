@@ -24,22 +24,24 @@ void Renderer::Run()
 {
 	auto Actors = TitanEngine::Get()->GetSceneIns()->SceneDataArr;
 	
+
+	// shadow pass
 	RHI->SetShadowMapTarget();
 	for (auto actor : Actors)
 	{
-		RHI->UpdateObjectCB(actor);
+		RHI->UpdateObjectCB(actor, TitanEngine::Get()->GetTimer());
 		RHI->UpdateMaterialCB();
-		RHI->UpdateShadowPass(actor);
+		RHI->UpdateShadowPass(TitanEngine::Get()->GetTimer());
 		RHI->DrawShadowMap(actor);
 	}
 	RHI->EndSHadowMap();
 
 
-
+	// main pass
 	RHI->SetRenderTarget();
 	for (auto actor : Actors)
 	{
-		RHI->UpdateObjectCB(actor);
+		RHI->UpdateObjectCB(actor, TitanEngine::Get()->GetTimer());
 		RHI->UpdateMaterialCB();
 		RHI->Draw(actor);
 	}

@@ -3,6 +3,7 @@
 #include "Scene.h"
 #include "ResourceManager.h"
 #include "Renderer.h"
+#include "GameTimer.h"
 
 class TitanEngine
 {

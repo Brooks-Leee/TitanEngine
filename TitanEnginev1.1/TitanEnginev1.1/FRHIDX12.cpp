@@ -207,7 +207,7 @@ void FRHIDX12::SetMeshBuffer()
 
 
 
-void FRHIDX12::UpdateObjectCB(FSceneData actor)
+void FRHIDX12::UpdateObjectCB(FSceneData actor, GameTimer& gt)
 {
 	ObjectConstants objConstants;
 	mScene->camera.UpdateViewMat();
@@ -239,7 +239,7 @@ void FRHIDX12::UpdateObjectCB(FSceneData actor)
 	objConstants.World = mWorld;
 	objConstants.ViewProj = glm::transpose(proj * view);
 	objConstants.WorldViewProj = glm::transpose(worldViewProj);
-	objConstants.gTime = mTimer.TotalTime();
+	objConstants.gTime = gt.TotalTime();
 	objConstants.Location = location;
 	objConstants.Rotation = rotation;
 	objConstants.Scale = scale;
@@ -262,10 +262,13 @@ void FRHIDX12::UpdateMaterialCB()
 
 }
 
-void FRHIDX12::UpdateShadowPass(FSceneData actor)
+void FRHIDX12::UpdateShadowPass(GameTimer& gt)
 {
 	TLight* light = TitanEngine::Get()->GetSceneIns()->light;
 	glm::vec3 lightDir = light->LightDirection;
+
+	lightDir.y += sin(gt.TotalTime() / 4);
+
 
 	float Radius = 3000;
 	glm::vec3 lightPos = -2.0f * Radius * lightDir;

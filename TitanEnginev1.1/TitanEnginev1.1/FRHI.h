@@ -23,9 +23,9 @@ public:
 	virtual void SetScissorRects (int ClientWidth, int ClientHeight) = 0;
 
 	virtual void SetMeshBuffer() = 0;
-	virtual void UpdateObjectCB(FSceneData actor) = 0;
+	virtual void UpdateObjectCB(FSceneData actor, GameTimer& gt) = 0;
 	virtual void UpdateMaterialCB() = 0;
-	virtual void UpdateShadowPass(FSceneData actor) = 0;
+	virtual void UpdateShadowPass(GameTimer& gt) = 0;
 
 	virtual void SetRenderTarget() = 0;
 	virtual void Draw(FSceneData actor) = 0;

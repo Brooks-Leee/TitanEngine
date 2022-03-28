@@ -60,9 +60,9 @@ public:
 	virtual void SetScissorRects(int ClientWidth, int ClientHeight) override;
 	virtual void SetMeshBuffer() override;
 
-	virtual void UpdateObjectCB(FSceneData actor) override;
+	virtual void UpdateObjectCB(FSceneData actor, GameTimer& gt) override;
 	virtual void UpdateMaterialCB() override;
-	virtual void UpdateShadowPass(FSceneData actor) override;
+	virtual void UpdateShadowPass(GameTimer& gt) override;
 
 	virtual void SetRenderTarget() override;
  	virtual void Draw(FSceneData actor) override;
