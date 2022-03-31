@@ -24,7 +24,7 @@ public:
 	virtual void CreateTexture(std::shared_ptr<TTexTure> Texture, UINT index) = 0;
 	virtual void CreateMaterials() = 0;
 
-	
+	virtual void BeginFrame() = 0;
 	virtual void UpdateObjectCB(Actor* actor, GameTimer& gt) = 0;
 	virtual void UpdateMaterialCB() = 0;
 	virtual void UpdateShadowPass(GameTimer& gt) = 0;
@@ -32,8 +32,8 @@ public:
 	virtual void SetViewPortAndRects(TViewPort& viewport) = 0;
 	virtual void SetRenderTarget() = 0;
 	virtual void SetRenderTarget(int NumRTDescriptors, unsigned __int64 RThandle, bool RTsSingleHandleToDescriptorRange, unsigned __int64 DShandle) = 0;
-	virtual void SetPipelineState(const char* pso) = 0;
-	virtual void SetShaderData() = 0;
+	virtual void SetPipelineState(std::string pso) = 0;
+	virtual void SetShaderData(Actor* actor, ShadowMap* shadowmap) = 0;
 
 	virtual void SetPrimitiveTopology(PRIMITIVE_TOPOLOGY primitiveTolology) = 0;
 	virtual void SetMeshBuffer(Actor* actor) = 0;
@@ -45,7 +45,7 @@ public:
 
 	virtual void SetShadowMapTarget() = 0;
 	virtual void DrawShadowMap(Actor* actor) = 0;
-	virtual void EndSHadowMap() = 0;
+	virtual void EndSHadowMap(ShadowMap* shadowmap) = 0;
 
 
 protected:

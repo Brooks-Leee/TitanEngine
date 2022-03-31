@@ -12,7 +12,7 @@ public:
 
 public:
 	void Init();
-	void BeginFrame();
+	void BeginRender();
 	void Run();
 	void UpdateScene();
 

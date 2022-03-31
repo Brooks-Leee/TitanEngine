@@ -65,7 +65,7 @@ void FRHIDX12::CreateDescriptorHeaps(ShadowMap* shadowmap)
 
  StaticMesh* FRHIDX12::CreateMeshBuffer(FMeshData* meshData)
 {
-	mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSO.Get());
+	//mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSO.Get());
 
 	auto Geo = new TMeshBufferDX12();
 	std::vector<Vertex> vertices;
@@ -129,9 +129,9 @@ void FRHIDX12::CreateDescriptorHeaps(ShadowMap* shadowmap)
 	mGeoArr.push_back(Geo);*/
 	
 
-	ThrowIfFailed(mCommandList->Close());
-	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
-	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+	//ThrowIfFailed(mCommandList->Close());
+	//ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
+	//mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
 	return Geo;
 }
@@ -139,6 +139,11 @@ void FRHIDX12::CreateDescriptorHeaps(ShadowMap* shadowmap)
 
 void FRHIDX12::CreateConstantBuffer()
 {
+	
+	//mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr);
+	ResetCommandList();
+
+
 	mCurrentElementCount = (UINT)mScene->SceneDataArr.size();
 	mObjectCB = std::make_unique<UploadBuffer<ObjectConstants>>(md3dDevice.Get(), mCurrentElementCount, true);
 	mMaterialCB = std::make_unique<UploadBuffer<MaterialConstants>>(md3dDevice.Get(), 3, true);
@@ -170,7 +175,7 @@ void FRHIDX12::CreateConstantBuffer()
 
 void FRHIDX12::CreateTexture(std::shared_ptr<TTexTure> Texture, UINT index)
 {
-	ResetCommandList();
+	//ResetCommandList();
 
 	auto renderTex = std::make_shared<TTextureDX12>();
 
@@ -180,9 +185,9 @@ void FRHIDX12::CreateTexture(std::shared_ptr<TTexTure> Texture, UINT index)
 	ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(), mCommandList.Get(), renderTex->Filename.c_str(), renderTex->Resource, renderTex->UploadHeap));
 	
 	mTextures[renderTex->Name] = std::move(renderTex);
-	CloseCommandList();
-	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
-	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+	//CloseCommandList();
+	//ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
+	//mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
 
 	auto Tex = mTextures[Texture->Name]->Resource;
@@ -234,6 +239,9 @@ void FRHIDX12::CreateMaterials()
 	mMaterials["rock"] = std::move(rock);
 	mMaterials["brick"] = std::move(brick);
 
+	ThrowIfFailed(mCommandList->Close());
+	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
+	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 }
 
 
@@ -275,6 +283,11 @@ void FRHIDX12::DrawActor(Actor* actor)
 
 
 
+
+void FRHIDX12::BeginFrame()
+{
+	ResetCommandList();
+}
 
 void FRHIDX12::UpdateObjectCB(Actor* actor, GameTimer& gt)
 {
@@ -404,9 +417,10 @@ void FRHIDX12::SetRenderTarget()
 }
 void FRHIDX12::SetRenderTarget(int NumRTDescriptors, unsigned __int64 RThandle, bool RTsSingleHandleToDescriptorRange, unsigned __int64 DShandle)
 {
-	auto RenderTargetHandle = std::shared_ptr<CD3DX12_CPU_DESCRIPTOR_HANDLE>();
-	auto DepthStencilHandle = std::shared_ptr<CD3DX12_CPU_DESCRIPTOR_HANDLE>();
+	auto RenderTargetHandle = std::make_shared<CD3DX12_CPU_DESCRIPTOR_HANDLE>();
+	auto DepthStencilHandle = std::make_shared<CD3DX12_CPU_DESCRIPTOR_HANDLE>();
 
+	DepthStencilHandle->ptr = DShandle;
 	if (RThandle == 0)
 	{
 		RenderTargetHandle = nullptr;
@@ -418,13 +432,12 @@ void FRHIDX12::SetRenderTarget(int NumRTDescriptors, unsigned __int64 RThandle, 
 		RenderTargetHandle->ptr = RThandle;
 		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
 			D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+		float rtvColor[4] = { 1.0f, 0.9f, 0.8f, 1.0f };
+		mCommandList->ClearRenderTargetView(*RenderTargetHandle, rtvColor, 0, nullptr);
 	}
-	DepthStencilHandle->ptr = DShandle;
 	
 
-	float rtvColor[4] = { 1.0f, 0.9f, 0.8f, 1.0f };
 	// Clear the back buffer and depth buffer.
-	mCommandList->ClearRenderTargetView(*RenderTargetHandle, rtvColor, 0, nullptr);
 	mCommandList->ClearDepthStencilView(*DepthStencilHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 
 	// Specify the buffers we are going to render to.
@@ -434,27 +447,73 @@ void FRHIDX12::SetRenderTarget(int NumRTDescriptors, unsigned __int64 RThandle, 
 	mCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 }
 
-void FRHIDX12::SetPipelineState(const char* pso)
+void FRHIDX12::SetPipelineState(std::string pso)
 {
 	if (pso == "opaque")
 	{
 		mCommandList->SetPipelineState(mPSOs["opaque"].Get());
 	}
-	else if (pso == "shadow_opaque")
+	else if (pso == "opaque_shadow")
 	{
 		mCommandList->SetPipelineState(mPSOs["shadow_opaque"].Get());
 	}
 
 }
 
-void FRHIDX12::SetShaderData()
+void FRHIDX12::SetShaderData(Actor* actor, ShadowMap* shadowmap)
 {
+
+	ShadowMapDX12* shadowMapDX = static_cast<ShadowMapDX12*>(shadowmap);
+	TMeshBufferDX12* DXMeshBuffer = static_cast<TMeshBufferDX12*>(actor->MeshBuffer);
+
+	mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
+
+	auto heapGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mCbvSrvHeap->GetGPUDescriptorHandleForHeapStart());
+	heapGPUHandle.Offset(actor->HeapIndex, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+	mCommandList->SetGraphicsRootDescriptorTable(0, heapGPUHandle);
+
+	if (DXMeshBuffer->Name == "Plane.titan")
+	{
+		heapGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mCbvSrvHeap->GetGPUDescriptorHandleForHeapStart());
+		heapGPUHandle.Offset(mTextures["waterTex"]->TexIndex, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+		mCommandList->SetGraphicsRootDescriptorTable(1, heapGPUHandle);
+		D3D12_GPU_VIRTUAL_ADDRESS matCBAddress = mMaterialCB->Resource()->GetGPUVirtualAddress() + mMaterials["water"]->matCBIndex * matCBByteSize;
+		mCommandList->SetGraphicsRootConstantBufferView(3, matCBAddress);
+
+	}
+	else if (DXMeshBuffer->Name == "SM_MatPreviewMesh_02.titan")
+	{
+		heapGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mCbvSrvHeap->GetGPUDescriptorHandleForHeapStart());
+		heapGPUHandle.Offset(mTextures["rockTex"]->TexIndex, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+		mCommandList->SetGraphicsRootDescriptorTable(1, heapGPUHandle);
+		D3D12_GPU_VIRTUAL_ADDRESS matCBAddress = mMaterialCB->Resource()->GetGPUVirtualAddress() + mMaterials["rock"]->matCBIndex * matCBByteSize;
+		mCommandList->SetGraphicsRootConstantBufferView(3, matCBAddress);
+	}
+	else
+	{
+		heapGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mCbvSrvHeap->GetGPUDescriptorHandleForHeapStart());
+		heapGPUHandle.Offset(mTextures["brickTex"]->TexIndex, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+		mCommandList->SetGraphicsRootDescriptorTable(1, heapGPUHandle);
+		D3D12_GPU_VIRTUAL_ADDRESS matCBAddress = mMaterialCB->Resource()->GetGPUVirtualAddress() + mMaterials["brick"]->matCBIndex * matCBByteSize;
+		mCommandList->SetGraphicsRootConstantBufferView(3, matCBAddress);
+	}
+
+
+	mCommandList->SetGraphicsRoot32BitConstants(2, 3, &mCameraloc, 0);
+
+	auto shadowPassCB = mShadowPassCB->Resource();
+	D3D12_GPU_VIRTUAL_ADDRESS shadowPassCBAddress = shadowPassCB->GetGPUVirtualAddress();
+	mCommandList->SetGraphicsRootConstantBufferView(4, shadowPassCBAddress);
+
+	auto shadowMapHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(shadowMapDX->Srv());
+	mCommandList->SetGraphicsRootDescriptorTable(5, shadowMapHandle);
+
 }
 
 void FRHIDX12::SetShadowMapTarget()
 {
-	ThrowIfFailed(mDirectCmdListAlloc->Reset());
-	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
+	//ThrowIfFailed(mDirectCmdListAlloc->Reset());
+	//ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
 	ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvSrvHeap.Get() };
 	mCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 	mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
@@ -496,9 +555,10 @@ void FRHIDX12::DrawShadowMap(Actor* actor)
 
 }
 
-void FRHIDX12::EndSHadowMap()
+void FRHIDX12::EndSHadowMap(ShadowMap* shadowmap)
 {
-	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mShadowMap->Resource(),
+	ShadowMapDX12* shadowMapDX = static_cast<ShadowMapDX12*>(shadowmap);
+	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(shadowMapDX->Resource(),
 		D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_GENERIC_READ));
 }
 
@@ -1192,7 +1252,7 @@ std::array<const CD3DX12_STATIC_SAMPLER_DESC, 7> FRHIDX12::GetStaticSamplers()
 
 void FRHIDX12::ResetCommandList()
 {
-	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSO.Get()));
+	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
 }
 
 void FRHIDX12::CloseCommandList()

@@ -45,6 +45,7 @@ public:
 	virtual void CreateMaterials() override;
 	virtual void CreateConstantBuffer() override;
 
+	virtual void BeginFrame() override;
 	virtual void UpdateObjectCB(Actor* actor, GameTimer& gt) override;
 	virtual void UpdateMaterialCB() override;
 	virtual void UpdateShadowPass(GameTimer& gt) override;
@@ -53,11 +54,11 @@ public:
 
 	virtual void SetViewPortAndRects(TViewPort& viewport) override;
 	virtual void SetRenderTarget(int NumRTDescriptors, unsigned __int64 RThandle, bool RTsSingleHandleToDescriptorRange, unsigned __int64 DShandle) override;
-	virtual void SetPipelineState(const char* pso) override;
-	virtual void SetShaderData() override;
+	virtual void SetPipelineState(std::string pso) override;
 
 	virtual void SetPrimitiveTopology(PRIMITIVE_TOPOLOGY primitiveTolology) override;
 	virtual void SetMeshBuffer(Actor* actor) override;
+	virtual void SetShaderData(Actor* actor, ShadowMap* shadowmap) override;
 	virtual void DrawActor(Actor* actor) override;
 
 
@@ -66,7 +67,7 @@ public:
 
 	virtual void SetShadowMapTarget()override;
 	virtual void DrawShadowMap(Actor* actor) override;
-	virtual void EndSHadowMap() override;
+	virtual void EndSHadowMap(ShadowMap* shadowmap) override;
 
 
 public:
