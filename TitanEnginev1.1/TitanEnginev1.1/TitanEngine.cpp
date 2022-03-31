@@ -36,7 +36,7 @@ bool TitanEngine::Run()
 	isRunning = true;
 	mTimer.Reset();
 
-	RendererIns->UpdateScene();
+	RendererIns->BeginFrame();
 
 	while (isRunning && WindowIns->Run())
 	{

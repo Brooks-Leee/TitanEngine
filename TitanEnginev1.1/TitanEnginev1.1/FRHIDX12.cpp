@@ -4,7 +4,24 @@
 #include "TitanEngine.h"
 #include "DDSTextureLoader.h"
 #include "TLight.h"
+#include "ShadowMapDX12.h"
 
+FRHIDX12* FRHIDX12::mFRHIDX12 = nullptr;
+
+
+FRHIDX12::FRHIDX12()
+{
+	if (mFRHIDX12 ==nullptr)
+	{
+		mFRHIDX12 = this;
+	}
+}
+
+FRHIDX12::~FRHIDX12()
+{
+	delete mFRHIDX12;
+	mFRHIDX12 = nullptr;
+}
 
 void FRHIDX12::InitRHI(Scene* scene)
 {
@@ -13,10 +30,44 @@ void FRHIDX12::InitRHI(Scene* scene)
 
 }
 
-void FRHIDX12::CreateMeshBuffer(FMeshData* meshData)
+ShadowMap* FRHIDX12::CreateShadowMap()
+{
+	ShadowMap* ShadowMapDX = new ShadowMapDX12(md3dDevice.Get(), 2048, 2048);
+	return ShadowMapDX;
+}
+
+void FRHIDX12::CreateDescriptorHeaps(ShadowMap* shadowmap)
+{
+	D3D12_DESCRIPTOR_HEAP_DESC cbvAndsrvDesc;
+	//mCurrentElementCount = (UINT)mScene->SceneDataArr.size();
+	cbvAndsrvDesc.NumDescriptors = 100;
+	cbvAndsrvDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	cbvAndsrvDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	cbvAndsrvDesc.NodeMask = 0;
+
+	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&cbvAndsrvDesc, IID_PPV_ARGS(&mCbvSrvHeap)));
+
+	// allocate heap memory for shadow map pass
+	auto CbvSrvCPUHeapStart = mCbvSrvHeap->GetCPUDescriptorHandleForHeapStart();
+	auto CbvSrvGPUHeapStart = mCbvSrvHeap->GetGPUDescriptorHandleForHeapStart();
+	auto DsvCPUStart = mDsvHeap->GetCPUDescriptorHandleForHeapStart();
+
+	UINT descriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	UINT dsvDesSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+	
+	ShadowMapDX12* shadowMapDX = static_cast<ShadowMapDX12*>(shadowmap);
+
+	shadowMapDX->BuildDescriptors(
+		CD3DX12_CPU_DESCRIPTOR_HANDLE(CbvSrvCPUHeapStart, 50, descriptorSize),
+		CD3DX12_GPU_DESCRIPTOR_HANDLE(CbvSrvGPUHeapStart, 50, descriptorSize),
+		CD3DX12_CPU_DESCRIPTOR_HANDLE(DsvCPUStart, 1, dsvDesSize));
+}
+
+ StaticMesh* FRHIDX12::CreateMeshBuffer(FMeshData* meshData)
 {
 	mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSO.Get());
 
+	auto Geo = new TMeshBufferDX12();
 	std::vector<Vertex> vertices;
 	size_t verticesLen = meshData->Vertices.size();
 	vertices.resize(verticesLen);
@@ -40,7 +91,9 @@ void FRHIDX12::CreateMeshBuffer(FMeshData* meshData)
 	indices.resize(meshData->indices.size());
 	indices = meshData->indices;
 
-	std::shared_ptr<MeshGeometry> Geo = std::make_shared<MeshGeometry>();
+	//std::shared_ptr<MeshGeometry> Geo = std::make_shared<MeshGeometry>();
+	
+
 
 	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
 	const UINT ibByteSize = (UINT)indices.size() * sizeof(uint32_t);
@@ -71,14 +124,16 @@ void FRHIDX12::CreateMeshBuffer(FMeshData* meshData)
 
 	Geo->DrawArgs[meshData->AssetPath] = submesh;
 
-	mGeoMap[meshData->AssetPath] = std::move(Geo);
-	mGeoArr.push_back(Geo);
+	Geo->StaticMeshInfo.AssetPath = meshData->AssetPath;
+	/*mGeoMap[meshData->AssetPath] = std::move(Geo);
+	mGeoArr.push_back(Geo);*/
 	
 
 	ThrowIfFailed(mCommandList->Close());
 	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
 	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
+	return Geo;
 }
 
 
@@ -110,6 +165,7 @@ void FRHIDX12::CreateConstantBuffer()
 		md3dDevice->CreateConstantBufferView(&cbvDesc, heapCPUHandle);
 		heapCPUHandle.Offset(1, DescriptorSize);
 	}
+
 }
 
 void FRHIDX12::CreateTexture(std::shared_ptr<TTexTure> Texture, UINT index)
@@ -117,16 +173,17 @@ void FRHIDX12::CreateTexture(std::shared_ptr<TTexTure> Texture, UINT index)
 	ResetCommandList();
 
 	auto renderTex = std::make_shared<TTextureDX12>();
+
 	renderTex->Filename = Texture->Filename;
 	renderTex->Name = Texture->Name;
 	renderTex->TexIndex = mCurrentElementCount + index;
 	ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(), mCommandList.Get(), renderTex->Filename.c_str(), renderTex->Resource, renderTex->UploadHeap));
 	
 	mTextures[renderTex->Name] = std::move(renderTex);
-	//std::shared_ptr<TRHITexture> GPUTexture = renderTex;
 	CloseCommandList();
 	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
 	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+
 
 	auto Tex = mTextures[Texture->Name]->Resource;
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -138,7 +195,6 @@ void FRHIDX12::CreateTexture(std::shared_ptr<TTexTure> Texture, UINT index)
 
 	auto heapCPUHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(mCbvSrvHeap->GetCPUDescriptorHandleForHeapStart());
 	UINT DescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
 
 	heapCPUHandle.Offset(mTextures[Texture->Name]->TexIndex, DescriptorSize);
 	
@@ -181,33 +237,46 @@ void FRHIDX12::CreateMaterials()
 }
 
 
-void FRHIDX12::SetViewPort(float TopLeftX, float TopLeftY, float Width, float Height, float MinDepth, float MaxDepth)
+void FRHIDX12::SetViewPortAndRects(TViewPort& viewport)
 {
 
-	mScreenViewport.TopLeftX = TopLeftX;
-	mScreenViewport.TopLeftY = TopLeftY;
-	mScreenViewport.Width = Width;
-	mScreenViewport.Height = Height;
-	mScreenViewport.MinDepth = MinDepth;
-	mScreenViewport.MaxDepth = MaxDepth;
+	mScreenViewport.TopLeftX = viewport.TopLeftX;
+	mScreenViewport.TopLeftY = viewport.TopLeftY;
+	mScreenViewport.Width = viewport.Width;
+	mScreenViewport.Height = viewport.Height;
+	mScreenViewport.MinDepth = viewport.MinDepth;
+	mScreenViewport.MaxDepth = viewport.MaxDepth;
+
+	mScissorRect = { 0, 0, viewport.ClientWidth, viewport.ClientHeight };
+
 	mCommandList->RSSetViewports(1, &mScreenViewport);
-}
-
-void FRHIDX12::SetScissorRects(int ClientWidth, int ClientHeight)
-{
-	mScissorRect = { 0, 0, ClientWidth, ClientHeight };
 	mCommandList->RSSetScissorRects(1, &mScissorRect);
-	
 }
 
-void FRHIDX12::SetMeshBuffer()
+
+
+void FRHIDX12::SetPrimitiveTopology(PRIMITIVE_TOPOLOGY primitiveTolology)
 {
+	mCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY(primitiveTolology));
+}
+
+void FRHIDX12::SetMeshBuffer(Actor* actor)
+{
+	TMeshBufferDX12* DXMesh = static_cast<TMeshBufferDX12*>(actor->MeshBuffer);
+	mCommandList->IASetVertexBuffers(0, 1, &DXMesh->VertexBufferView());
+	mCommandList->IASetIndexBuffer(&DXMesh->IndexBufferView());
+}
+
+void FRHIDX12::DrawActor(Actor* actor)
+{
+	TMeshBufferDX12* DXMeshBuffer = static_cast<TMeshBufferDX12*>(actor->MeshBuffer);
+	mCommandList->DrawIndexedInstanced(DXMeshBuffer->DrawArgs[DXMeshBuffer->Name].IndexCount, 1, 0, 0, 0);
 }
 
 
 
 
-void FRHIDX12::UpdateObjectCB(FSceneData actor, GameTimer& gt)
+void FRHIDX12::UpdateObjectCB(Actor* actor, GameTimer& gt)
 {
 	ObjectConstants objConstants;
 	mScene->camera.UpdateViewMat();
@@ -217,7 +286,7 @@ void FRHIDX12::UpdateObjectCB(FSceneData actor, GameTimer& gt)
 	mCameraloc = mScene->camera.GetCameraPos3f();
 
 
-	auto& t = actor.Transform;
+	auto& t = actor->Transform;
 	auto& s = t.scale;
 	auto& r = t.rotation;
 	auto& l = t.location;
@@ -244,7 +313,7 @@ void FRHIDX12::UpdateObjectCB(FSceneData actor, GameTimer& gt)
 	objConstants.Rotation = rotation;
 	objConstants.Scale = scale;
 	// put the constant object into constant buffer which is a Upload Buffer
-	mObjectCB->CopyData(actor.HeapIndex, objConstants);
+	mObjectCB->CopyData(actor->HeapIndex, objConstants);
 
 }
 
@@ -267,9 +336,8 @@ void FRHIDX12::UpdateShadowPass(GameTimer& gt)
 	TLight* light = TitanEngine::Get()->GetSceneIns()->light;
 	glm::vec3 lightDir = light->LightDirection;
 
-	lightDir.y += sin(gt.TotalTime() / 4);
-
-
+	lightDir.y += sin(gt.TotalTime() / 10);
+	
 	float Radius = 3000;
 	glm::vec3 lightPos = -2.0f * Radius * lightDir;
 	glm::mat4x4 lightView = glm::lookAtLH(lightPos, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
@@ -283,18 +351,7 @@ void FRHIDX12::UpdateShadowPass(GameTimer& gt)
 	float t = sphereCenterLS.y + Radius;
 	float f = sphereCenterLS.z + Radius;
 
-
 	glm::mat4x4 lightProj = glm::orthoLH_ZO(l, r, b, t, n, f);
-
-
-	/*glm::vec3 lightPos = glm::vec3(2620.0f, 2450.0f, 1860.0f);
-	glm::vec3 TargetPos = glm::vec3(0.0f, 0.0f, 0.0f);
-	glm::vec3 lightUp = glm::vec3(0.0f, 0.0f, 1.0f);*/
-
-	/*glm::mat4 lightView = glm::lookAtLH(lightPos, TargetPos, lightUp);
-	glm::mat4 lightProj = glm::orthoLH_ZO(-3000.0f, 3000.f, -3000.0f, 3000.f, -1000.0f, 10000.f);*/
-
-	//glm::mat4 LightVP = glm::transpose(lightProj * lightView);
 
 	glm::mat4 T(
 		0.5f, 0.0f, 0.0f, 0.0f,
@@ -345,11 +402,59 @@ void FRHIDX12::SetRenderTarget()
 	D3D12_GPU_VIRTUAL_ADDRESS shadowPassCBAddress = shadowPassCB->GetGPUVirtualAddress();
 	mCommandList->SetGraphicsRootConstantBufferView(4, shadowPassCBAddress);
 }
+void FRHIDX12::SetRenderTarget(int NumRTDescriptors, unsigned __int64 RThandle, bool RTsSingleHandleToDescriptorRange, unsigned __int64 DShandle)
+{
+	auto RenderTargetHandle = std::shared_ptr<CD3DX12_CPU_DESCRIPTOR_HANDLE>();
+	auto DepthStencilHandle = std::shared_ptr<CD3DX12_CPU_DESCRIPTOR_HANDLE>();
+
+	if (RThandle == 0)
+	{
+		RenderTargetHandle = nullptr;
+		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mShadowMap->Resource(),
+			D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_DEPTH_WRITE));
+	}
+	else
+	{
+		RenderTargetHandle->ptr = RThandle;
+		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
+			D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+	}
+	DepthStencilHandle->ptr = DShandle;
+	
+
+	float rtvColor[4] = { 1.0f, 0.9f, 0.8f, 1.0f };
+	// Clear the back buffer and depth buffer.
+	mCommandList->ClearRenderTargetView(*RenderTargetHandle, rtvColor, 0, nullptr);
+	mCommandList->ClearDepthStencilView(*DepthStencilHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
+
+	// Specify the buffers we are going to render to.
+	mCommandList->OMSetRenderTargets(NumRTDescriptors, RenderTargetHandle.get(), RTsSingleHandleToDescriptorRange, DepthStencilHandle.get());
+
+	ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvSrvHeap.Get() };
+	mCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+}
+
+void FRHIDX12::SetPipelineState(const char* pso)
+{
+	if (pso == "opaque")
+	{
+		mCommandList->SetPipelineState(mPSOs["opaque"].Get());
+	}
+	else if (pso == "shadow_opaque")
+	{
+		mCommandList->SetPipelineState(mPSOs["shadow_opaque"].Get());
+	}
+
+}
+
+void FRHIDX12::SetShaderData()
+{
+}
 
 void FRHIDX12::SetShadowMapTarget()
 {
 	ThrowIfFailed(mDirectCmdListAlloc->Reset());
-	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSOs["opaque"].Get()));
+	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
 	ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvSrvHeap.Get() };
 	mCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 	mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
@@ -367,15 +472,17 @@ void FRHIDX12::SetShadowMapTarget()
 }
 
 
-void FRHIDX12::DrawShadowMap(FSceneData actor)
+void FRHIDX12::DrawShadowMap(Actor* actor)
 {
-	auto geo = mGeoMap[actor.AssetPath];
-	mCommandList->IASetVertexBuffers(0, 1, &geo->VertexBufferView());
-	mCommandList->IASetIndexBuffer(&geo->IndexBufferView());
+	TMeshBufferDX12* DXMesh = static_cast<TMeshBufferDX12*>(actor->MeshBuffer);
+
+	//auto geo = mGeoMap[actor->AssetPath];
+	mCommandList->IASetVertexBuffers(0, 1, &DXMesh->VertexBufferView());
+	mCommandList->IASetIndexBuffer(&DXMesh->IndexBufferView());
 	mCommandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	auto heapGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mCbvSrvHeap->GetGPUDescriptorHandleForHeapStart());
-	heapGPUHandle.Offset(actor.HeapIndex, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+	heapGPUHandle.Offset(actor->HeapIndex, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
 	mCommandList->SetGraphicsRootDescriptorTable(0, heapGPUHandle);
 
 
@@ -384,7 +491,7 @@ void FRHIDX12::DrawShadowMap(FSceneData actor)
 	D3D12_GPU_VIRTUAL_ADDRESS shadowPassCBAddress = shadowPassCB->GetGPUVirtualAddress();
 	mCommandList->SetGraphicsRootConstantBufferView(4, shadowPassCBAddress);
 
-	mCommandList->DrawIndexedInstanced(geo->DrawArgs[geo->Name].IndexCount, 1, 0, 0, 0);
+	mCommandList->DrawIndexedInstanced(DXMesh->DrawArgs[DXMesh->Name].IndexCount, 1, 0, 0, 0);
 
 
 }
@@ -396,22 +503,24 @@ void FRHIDX12::EndSHadowMap()
 }
 
 
-void FRHIDX12::Draw(FSceneData actor)
+void FRHIDX12::Draw(Actor* actor)
 {
 
 	//ThrowIfFailed(mDirectCmdListAlloc->Reset());
 
 	//ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSO.Get()));
 
-	auto geo = mGeoMap[actor.AssetPath];
-	mCommandList->IASetVertexBuffers(0, 1, &geo->VertexBufferView());
-	mCommandList->IASetIndexBuffer(&geo->IndexBufferView());
+	//auto geo = mGeoMap[actor->AssetPath];
+	TMeshBufferDX12* DXMeshBuffer = static_cast<TMeshBufferDX12*>(actor->MeshBuffer);
+
+	mCommandList->IASetVertexBuffers(0, 1, &DXMeshBuffer->VertexBufferView());
+	mCommandList->IASetIndexBuffer(&DXMeshBuffer->IndexBufferView());
 	mCommandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 
 
 	auto heapGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mCbvSrvHeap->GetGPUDescriptorHandleForHeapStart());
-	heapGPUHandle.Offset(actor.HeapIndex, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+	heapGPUHandle.Offset(actor->HeapIndex, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
 	mCommandList->SetGraphicsRootDescriptorTable(0, heapGPUHandle);
 
 	auto shadowMapHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mShadowMap->Srv());
@@ -419,7 +528,7 @@ void FRHIDX12::Draw(FSceneData actor)
 
 
 
-	if (geo->Name == "Plane.titan")
+	if (DXMeshBuffer->Name == "Plane.titan")
 	{
 		heapGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mCbvSrvHeap->GetGPUDescriptorHandleForHeapStart());
 		heapGPUHandle.Offset(mTextures["waterTex"]->TexIndex, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
@@ -428,7 +537,7 @@ void FRHIDX12::Draw(FSceneData actor)
 		mCommandList->SetGraphicsRootConstantBufferView(3, matCBAddress);
 
 	}
-	else if (geo->Name == "SM_MatPreviewMesh_02.titan")
+	else if (DXMeshBuffer->Name == "SM_MatPreviewMesh_02.titan")
 	{
 		heapGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mCbvSrvHeap->GetGPUDescriptorHandleForHeapStart());
 		heapGPUHandle.Offset(mTextures["rockTex"]->TexIndex, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
@@ -448,7 +557,7 @@ void FRHIDX12::Draw(FSceneData actor)
 	
 	mCommandList->SetGraphicsRoot32BitConstants(2, 3, &mCameraloc, 0);
 
-	mCommandList->DrawIndexedInstanced(geo->DrawArgs[geo->Name].IndexCount, 1, 0, 0, 0);
+	mCommandList->DrawIndexedInstanced(DXMeshBuffer->DrawArgs[DXMeshBuffer->Name].IndexCount, 1, 0, 0, 0);
 
 	
 
@@ -474,6 +583,8 @@ void FRHIDX12::EndFrame()
 	// so we do not have to wait per frame.
 
 	FlushCommandQueue();
+
+
 }
 
 
@@ -490,7 +601,7 @@ bool FRHIDX12::Initialize()
 	//RootSignature();
 	//BuildShadersAndInputLayout();
 	//BuildPSO();
-	mShadowMap = std::make_unique<ShadowMap>(md3dDevice.Get(), 2048, 2048);
+	mShadowMap = std::make_unique<ShadowMapDX12>(md3dDevice.Get(), 2048, 2048);
 	mSceneBounds.Center = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	mSceneBounds.Radius = sqrtf(3000000);
 
@@ -500,6 +611,11 @@ bool FRHIDX12::Initialize()
 	BuildPSO();
 
 	return true;
+}
+
+FRHIDX12* FRHIDX12::Get()
+{
+	return mFRHIDX12;
 }
 
 void FRHIDX12::OnResize()
@@ -917,7 +1033,7 @@ void FRHIDX12::BuildShadersAndInputLayout()
 	mpsByteCode = d3dUtil::CompileShader(L"Assets\\Shaders\\color.hlsl", nullptr, "PS", "ps_5_0");
 
 	msmapVSByteCode = d3dUtil::CompileShader(L"Assets\\Shaders\\shadowmap.hlsl", nullptr, "VS", "vs_5_0");
-	//msmapVSByteCode = d3dUtil::CompileShader(L"Assets\\Shaders\\shadowmap.hlsl", nullptr, "PS", "vs_5_0");
+	msmapPSByteCode = d3dUtil::CompileShader(L"Assets\\Shaders\\shadowmap.hlsl", nullptr, "PS", "ps_5_0");
 
 
 	mInputLayout =
@@ -972,10 +1088,10 @@ void FRHIDX12::BuildPSO()
 	{
 		reinterpret_cast<BYTE*>(msmapVSByteCode->GetBufferPointer()), msmapVSByteCode->GetBufferSize()
 	};
-	//smapPsoDesc.PS = 
-	//{
-	//	reinterpret_cast<BYTE*>(msmapPSByteCode->GetBufferPointer()), msmapPSByteCode->GetBufferSize()
-	//};
+	smapPsoDesc.PS =
+	{
+		reinterpret_cast<BYTE*>(msmapPSByteCode->GetBufferPointer()), msmapPSByteCode->GetBufferSize()
+	};
 	
 	smapPsoDesc.RTVFormats[0] = DXGI_FORMAT_UNKNOWN;
 	smapPsoDesc.NumRenderTargets = 0;

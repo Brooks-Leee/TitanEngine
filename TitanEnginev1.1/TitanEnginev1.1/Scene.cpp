@@ -6,7 +6,8 @@
 
 Scene::Scene()
 {
-	light = new TLight;
+	light = new TLight();
+	actor = new Actor();
 }
 
 Scene::~Scene()

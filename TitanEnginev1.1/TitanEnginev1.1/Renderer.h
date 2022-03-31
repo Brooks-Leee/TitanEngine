@@ -1,7 +1,7 @@
 #pragma once
 #include "FRHI.h"
-
-
+#include "TRenderTarget.h"
+#include "ShadowMap.h"
 
 class Renderer
 {
@@ -12,13 +12,15 @@ public:
 
 public:
 	void Init();
+	void BeginFrame();
 	void Run();
 	void UpdateScene();
 
-	
-
 protected:
 	FRHI* RHI;
-
+	std::unordered_map<std::string, StaticMesh*> MeshBufferMap;
+	std::unordered_map<std::string, TTexTure*> TextureBufferMap;
+	std::shared_ptr<TRenderTarget> mRenderTarget;
+	ShadowMap* mShadowMap;
 };
 

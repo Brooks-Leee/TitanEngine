@@ -1,5 +1,12 @@
 #pragma once
+
+
+
+
+
 class TResource
 {
+	
+	
 };
 

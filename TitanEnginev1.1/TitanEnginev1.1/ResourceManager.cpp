@@ -3,7 +3,7 @@
 #include "TitanEngine.h"
 #include "TLight.h"
 #include "MathHelper.h"
-
+#include "Actor.h"
 
 ResourceManager::ResourceManager()
 {
@@ -34,24 +34,24 @@ void ResourceManager::LoadAllActorInMap()
 
 		for (int32_t i = 0; i < ArrLen; i++)
 		{
-			ifs.read((char*)&scene->SceneData.Transform, sizeof(FTransform));
-
+			Actor* actor = new Actor();
+			ifs.read((char*)&actor->Transform, sizeof(FTransform));
 			int32_t StrLen = 0;
 			ifs.read((char*)&StrLen, sizeof(int32_t));
-			scene->SceneData.AssetPath.resize(StrLen);
-			ifs.read((char*)scene->SceneData.AssetPath.data(), sizeof(char) * StrLen);
-			scene->SceneData.AssetPath.erase(scene->SceneData.AssetPath.size() - 1, 1);
-			scene->SceneData.HeapIndex = i;
-			scene->SceneDataArr.push_back(scene->SceneData);
+			actor->AssetPath.resize(StrLen);
+			ifs.read((char*)actor->AssetPath.data(), sizeof(char) * StrLen);
+			actor->AssetPath.erase(actor->AssetPath.size() - 1, 1);
+			actor->HeapIndex = i;
+			scene->SceneDataArr.push_back(actor);
 
 
 
-			if (mAllMeshData.find(scene->SceneData.AssetPath) == mAllMeshData.end() )
+			if (mAllMeshData.find(actor->AssetPath) == mAllMeshData.end() )
 			{
-				std::string FilePath = "Assets\\StaticMesh\\" + scene->SceneData.AssetPath;
+				std::string FilePath = "Assets\\StaticMesh\\" + actor->AssetPath;
 				StaticMesh* staticMesh = LoadStaticMesh(FilePath);
 				FMeshData* meshData = staticMesh->GetStaticMesh();
-				mAllMeshData.insert(std::pair<std::string, FMeshData*>(scene->SceneData.AssetPath, meshData));
+				mAllMeshData.insert(std::pair<std::string, FMeshData*>(actor->AssetPath, meshData));
 
 			}
 		}

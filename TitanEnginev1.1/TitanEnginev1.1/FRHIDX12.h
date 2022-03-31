@@ -4,7 +4,10 @@
 #include "stdafx.h"
 #include "TTextureDX12.h"
 #include "TMaterial.h"
-#include "ShadowMap.h"
+#include "ShadowMapDX12.h"
+#include "TMeshBufferDX12.h"
+#include "StaticMesh.h"
+
 
 using Microsoft::WRL::ComPtr;
 using namespace std;
@@ -23,53 +26,46 @@ struct ObjectConstants
 
 struct ShadowPassConstants
 {	
-	//glm::mat4x4 View = MathHelper::Identity4x4glm();
-	//glm::mat4x4 InvView = MathHelper::Identity4x4glm();
-	//glm::mat4x4 Proj = MathHelper::Identity4x4glm();
-	//glm::mat4x4 InvProj = MathHelper::Identity4x4glm();
-	//glm::mat4x4 ViewProj = MathHelper::Identity4x4glm();
-	//glm::mat4x4 InvViewProj = MathHelper::Identity4x4glm();
-	//glm::mat4x4 ShadowTransform = MathHelper::Identity4x4glm();
-	//glm::vec3 EyePosW = { 0.0f, 0.0f, 0.0f };
-	//float cbPerObjectPad1 = 0.0f;
-	//glm::vec2 RenderTargetSize = { 0.0f, 0.0f };
-	//glm::vec2 InvRenderTargetSize = { 0.0f, 0.0f };
-	//float NearZ = 0.0f;
-	//float FarZ = 0.0f;
-	//float TotalTime = 0.0f;
-	//float DeltaTime = 0.0f;
-	//XMFLOAT4X4 lightViewProj;
-	//glm::vec3 fill;
 	glm::mat4 lightVP;
 	glm::mat4 lightTVP;
-	//DirectX::XMFLOAT4 AmbientLight = { 0.0f, 0.0f, 0.0f, 1.0f };
 };
 
 class FRHIDX12 : public FRHI
 {
 public:
 
+	FRHIDX12();
+	~FRHIDX12();
+
 	virtual void InitRHI(Scene* scene) override;
-	virtual void CreateMeshBuffer(FMeshData* meshData) override;
+	virtual ShadowMap* CreateShadowMap() override;
+	virtual void CreateDescriptorHeaps(ShadowMap* shadowmap) override;
+	virtual StaticMesh* CreateMeshBuffer(FMeshData* meshData) override;
 	virtual void CreateTexture(std::shared_ptr<TTexTure> Texture, UINT index) override;
 	virtual void CreateMaterials() override;
 	virtual void CreateConstantBuffer() override;
-	
 
-	virtual void SetViewPort(float TopLeftX, float TopLeftY, float Width, float Height, float MinDepth, float MaxDepth) override;
-	virtual void SetScissorRects(int ClientWidth, int ClientHeight) override;
-	virtual void SetMeshBuffer() override;
-
-	virtual void UpdateObjectCB(FSceneData actor, GameTimer& gt) override;
+	virtual void UpdateObjectCB(Actor* actor, GameTimer& gt) override;
 	virtual void UpdateMaterialCB() override;
 	virtual void UpdateShadowPass(GameTimer& gt) override;
-
+	
 	virtual void SetRenderTarget() override;
- 	virtual void Draw(FSceneData actor) override;
+
+	virtual void SetViewPortAndRects(TViewPort& viewport) override;
+	virtual void SetRenderTarget(int NumRTDescriptors, unsigned __int64 RThandle, bool RTsSingleHandleToDescriptorRange, unsigned __int64 DShandle) override;
+	virtual void SetPipelineState(const char* pso) override;
+	virtual void SetShaderData() override;
+
+	virtual void SetPrimitiveTopology(PRIMITIVE_TOPOLOGY primitiveTolology) override;
+	virtual void SetMeshBuffer(Actor* actor) override;
+	virtual void DrawActor(Actor* actor) override;
+
+
+ 	virtual void Draw(Actor* actor) override;
 	virtual void EndFrame() override;
 
 	virtual void SetShadowMapTarget()override;
-	virtual void DrawShadowMap(FSceneData actor) override;
+	virtual void DrawShadowMap(Actor* actor) override;
 	virtual void EndSHadowMap() override;
 
 
@@ -77,6 +73,7 @@ public:
 	bool Initialize();
 
 public:
+	static FRHIDX12* Get();
 	void UpdateObjectCB(const GameTimer& gt);
 	void Draw(const GameTimer& gt);
 
@@ -111,6 +108,7 @@ public:
 	void CloseCommandList();
 
 
+	static FRHIDX12* mFRHIDX12;
 	bool      m4xMsaaState = false;    // 4X MSAA enabled
 	UINT      m4xMsaaQuality = 0;      // quality level of 4X MSAA
 	GameTimer mTimer;
@@ -169,7 +167,7 @@ private:
 
 	std::unordered_map<std::string, std::shared_ptr<TMaterial>> mMaterials;
 
-	std::unique_ptr<ShadowMap> mShadowMap = nullptr;
+	std::unique_ptr<ShadowMapDX12> mShadowMap = nullptr;
 
 	ComPtr<ID3DBlob> mvsByteCode = nullptr;
 	ComPtr<ID3DBlob> mpsByteCode = nullptr;

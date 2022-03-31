@@ -111,8 +111,23 @@
     <ClInclude Include="TLight.h">
       <Filter>Public</Filter>
     </ClInclude>
+    <ClInclude Include="Actor.h">
+      <Filter>Public</Filter>
+    </ClInclude>
+    <ClInclude Include="TStruct.h">
+      <Filter>Public</Filter>
+    </ClInclude>
+    <ClInclude Include="TRenderTarget.h">
+      <Filter>Public</Filter>
+    </ClInclude>
+    <ClInclude Include="TRenderTargetDX12.h">
+      <Filter>DX12</Filter>
+    </ClInclude>
     <ClInclude Include="ShadowMap.h">
       <Filter>Public</Filter>
+    </ClInclude>
+    <ClInclude Include="ShadowMapDX12.h">
+      <Filter>DX12</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -200,8 +215,23 @@
     <ClCompile Include="TLight.cpp">
       <Filter>Private</Filter>
     </ClCompile>
+    <ClCompile Include="Actor.cpp">
+      <Filter>Private</Filter>
+    </ClCompile>
+    <ClCompile Include="TStruct.cpp">
+      <Filter>Private</Filter>
+    </ClCompile>
+    <ClCompile Include="TRenderTarget.cpp">
+      <Filter>Private</Filter>
+    </ClCompile>
+    <ClCompile Include="TRenderTargetDX12.cpp">
+      <Filter>DX12</Filter>
+    </ClCompile>
     <ClCompile Include="ShadowMap.cpp">
       <Filter>Private</Filter>
+    </ClCompile>
+    <ClCompile Include="ShadowMapDX12.cpp">
+      <Filter>DX12</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
