@@ -83,10 +83,10 @@ void Renderer::Run()
 		RHI->DrawActor(primitive);
 	}
 	RHI->ChangeResourceState(RenderTargetMap["ShadowMap"], RESOURCE_STATE_DEPTH_WRITE, RESOURCE_STATE_GENERIC_READ);
-	RHI->EndDraw();
+	//RHI->EndDraw();
 
 	// Main Pass
-	RHI->BeginFrame();
+	//RHI->BeginFrame();
 	TViewPort MainViewPort;
 	RHI->SetViewPortAndRects(ShadowViewPort);
 	RHI->SetRenderTarget(RenderTargetMap["Base"]);
