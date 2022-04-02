@@ -88,7 +88,7 @@ void Renderer::Run()
 	// Main Pass
 	//RHI->BeginFrame();
 	TViewPort MainViewPort;
-	RHI->SetViewPortAndRects(ShadowViewPort);
+	RHI->SetViewPortAndRects(MainViewPort);
 	RHI->SetRenderTarget(RenderTargetMap["Base"]);
 	RHI->SetPipelineState("opaque");
 
