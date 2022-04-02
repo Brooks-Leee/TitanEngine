@@ -7,6 +7,7 @@
 #include "TStruct.h"
 #include "ShadowMap.h"
 #include "TRenderTarget.h"
+#include "TSceneRender.h"
 
 class FRHI
 {
@@ -19,7 +20,7 @@ public:
 
 	virtual void InitRHI(Scene* scene) = 0;
 	virtual ShadowMap* CreateShadowMap() = 0;
-	virtual void CreateDescriptorHeaps() = 0;
+	virtual void CreateCbvSrvHeap() = 0;
 	virtual StaticMesh* CreateMeshBuffer(FMeshData* meshData) = 0;
 	virtual void CreateConstantBuffer() = 0;
 	virtual void CreateTexture(std::shared_ptr<TTexTure> Texture, UINT index) = 0;
@@ -30,7 +31,7 @@ public:
 	virtual void BeginFrame() = 0;
 	virtual void UpdateObjectCB(Primitive* primitive, GameTimer& gt) = 0;
 	virtual void UpdateMaterialCB() = 0;
-	virtual void UpdateShadowPass(GameTimer& gt) = 0;
+	virtual void UpdateShadowPass(TSceneRender* sceneRender) = 0;
 
 	virtual void SetViewPortAndRects(TViewPort& viewport) = 0;
 	virtual void SetRenderTarget() = 0;

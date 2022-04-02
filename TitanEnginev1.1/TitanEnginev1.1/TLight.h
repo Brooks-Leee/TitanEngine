@@ -9,8 +9,7 @@ public:
 	glm::vec3 LightDirection;
 	float Intensity;
 
-	//DirectX::XMFLOAT4 LightColor;
-	//DirectX::XMFLOAT3 LightDirection;
-	//float Intensity;
+	glm::mat4 lightVP;
+	glm::mat4 lightTVP;
 };
 

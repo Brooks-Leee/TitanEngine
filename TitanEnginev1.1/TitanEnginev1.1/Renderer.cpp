@@ -11,17 +11,18 @@ Renderer::Renderer()
 	FRHI::CreateRHI();
 	RHI = FRHI::Get();
 	
+	sceneRender = new TSceneRender();
 }
 
 Renderer::~Renderer()
 {
-
+	delete sceneRender;
+	sceneRender = nullptr;
 }
 
 void Renderer::Init()
 {
 	RHI->InitRHI(TitanEngine::Get()->GetSceneIns());
-	RHI->CreateDescriptorHeaps();
 }
 
 void Renderer::BeginRender()
@@ -57,6 +58,44 @@ void Renderer::BeginRender()
 
 }
 
+void Renderer::BuildLight()
+{
+	TLight* light = TitanEngine::Get()->GetSceneIns()->light;
+	glm::vec3 lightDir = light->LightDirection;
+	
+	auto gt = TitanEngine::Get()->GetTimer();
+
+	lightDir.y += sin(gt.TotalTime() / 10);
+
+	float Radius = 3000;
+	glm::vec3 lightPos = -2.0f * Radius * lightDir;
+	glm::mat4x4 lightView = glm::lookAtLH(lightPos, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+	glm::vec3 sphereCenterLS = MathHelper::Vector3TransformCoord(glm::vec3(0.0f, 0.0f, 0.0f), lightView);
+
+	float l = sphereCenterLS.x - Radius;
+	float b = sphereCenterLS.y - Radius;
+	float n = sphereCenterLS.z - Radius;
+	float r = sphereCenterLS.x + Radius;
+	float t = sphereCenterLS.y + Radius;
+	float f = sphereCenterLS.z + Radius;
+
+	glm::mat4x4 lightProj = glm::orthoLH_ZO(l, r, b, t, n, f);
+
+	glm::mat4 T(
+		0.5f, 0.0f, 0.0f, 0.0f,
+		0.0f, -0.5f, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f,
+		0.5f, 0.5f, 0.0f, 1.0f);
+	glm::mat4 S = lightProj * lightView;
+
+	light->lightVP = glm::transpose(S);
+	light->lightTVP = glm::transpose(T*S);
+	
+	sceneRender->LightMap["dirLight"] = light;
+
+}
+
 void Renderer::Run()
 {
 	auto Primivitives = TitanEngine::Get()->GetSceneIns()->SceneDataArr;
@@ -65,6 +104,7 @@ void Renderer::Run()
 	ShadowViewPort.ClientWidth = 2048;
 	ShadowViewPort.Height = 2048;
 	ShadowViewPort.Width = 2048;
+	BuildLight();
 
 	RHI->BeginFrame();
 	// Shadow Pass
@@ -76,17 +116,15 @@ void Renderer::Run()
 	{
 		RHI->UpdateObjectCB(primitive, TitanEngine::Get()->GetTimer());
 		RHI->UpdateMaterialCB();
-		RHI->UpdateShadowPass(TitanEngine::Get()->GetTimer());
+		RHI->UpdateShadowPass(sceneRender);
 		RHI->SetMeshBuffer(primitive);
 		RHI->SetPrimitiveTopology(PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		RHI->SetShaderData(primitive, RenderTargetMap["ShadowMap"]);
 		RHI->DrawActor(primitive);
 	}
 	RHI->ChangeResourceState(RenderTargetMap["ShadowMap"], RESOURCE_STATE_DEPTH_WRITE, RESOURCE_STATE_GENERIC_READ);
-	//RHI->EndDraw();
 
 	// Main Pass
-	//RHI->BeginFrame();
 	TViewPort MainViewPort;
 	RHI->SetViewPortAndRects(MainViewPort);
 	RHI->SetRenderTarget(RenderTargetMap["Base"]);
@@ -96,7 +134,7 @@ void Renderer::Run()
 	{
 		RHI->UpdateObjectCB(primitive, TitanEngine::Get()->GetTimer());
 		RHI->UpdateMaterialCB();
-		RHI->UpdateShadowPass(TitanEngine::Get()->GetTimer());
+		RHI->UpdateShadowPass(sceneRender);
 		RHI->SetMeshBuffer(primitive);
 		RHI->SetPrimitiveTopology(PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		RHI->SetShaderData(primitive, RenderTargetMap["Base"]);

@@ -9,6 +9,8 @@
 #include "StaticMesh.h"
 #include "TRenderTargetDX12.h"
 
+
+
 using Microsoft::WRL::ComPtr;
 using namespace std;
 using namespace DirectX;
@@ -39,7 +41,7 @@ public:
 
 	virtual void InitRHI(Scene* scene) override;
 	virtual ShadowMap* CreateShadowMap() override;
-	virtual void CreateDescriptorHeaps() override;
+	virtual void CreateCbvSrvHeap() override;
 	virtual StaticMesh* CreateMeshBuffer(FMeshData* meshData) override;
 	virtual void CreateTexture(std::shared_ptr<TTexTure> Texture, UINT index) override;
 	virtual void CreateMaterials() override;
@@ -50,7 +52,7 @@ public:
 	virtual void BeginFrame() override;
 	virtual void UpdateObjectCB(Primitive* primitive, GameTimer& gt) override;
 	virtual void UpdateMaterialCB() override;
-	virtual void UpdateShadowPass(GameTimer& gt) override;
+	virtual void UpdateShadowPass(TSceneRender* sceneRender) override;
 	
 	virtual void SetRenderTarget() override;
 	virtual void SetRenderTarget(TRenderTarget* renderTarget) override;
@@ -88,13 +90,10 @@ public:
 
 	void FlushCommandQueue();
 
-	void UpdateScene();
-
 	void BuildDescriptorHeaps();
 	void BuildDescriptor();
 	void BuildRootSignature();
 	void BuildShadersAndInputLayout();
-	void BuildGeometry();
 	void BuildPSO();
 
 	ID3D12Resource* CurrentBackBuffer()const;
@@ -150,8 +149,6 @@ public:
 	int mClientWidth = 800;
 	int mClientHeight = 600;
 	glm::vec3 mCameraloc;
-
-	DirectX::BoundingSphere mSceneBounds;
 
 
 private:

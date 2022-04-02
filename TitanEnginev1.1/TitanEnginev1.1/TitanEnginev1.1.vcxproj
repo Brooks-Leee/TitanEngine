@@ -175,6 +175,7 @@
     <ClInclude Include="TitanEngine.h" />
     <ClInclude Include="TMeshBufferDX12.h" />
     <ClInclude Include="TResource.h" />
+    <ClInclude Include="TSceneRender.h" />
     <ClInclude Include="TStruct.h" />
     <ClInclude Include="TTexTure.h" />
     <ClInclude Include="TTextureDX12.h" />
@@ -215,6 +216,7 @@
     <ClCompile Include="TitanEngine.cpp" />
     <ClCompile Include="TMeshBufferDX12.cpp" />
     <ClCompile Include="TResource.cpp" />
+    <ClCompile Include="TSceneRender.cpp" />
     <ClCompile Include="TStruct.cpp" />
     <ClCompile Include="TTexTure.cpp" />
     <ClCompile Include="TTextureDX12.cpp" />

@@ -135,6 +135,9 @@
     <ClInclude Include="THeap.h">
       <Filter>DX12</Filter>
     </ClInclude>
+    <ClInclude Include="TSceneRender.h">
+      <Filter>Public</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GameTimer.cpp">
@@ -244,6 +247,9 @@
     </ClCompile>
     <ClCompile Include="THeap.cpp">
       <Filter>DX12</Filter>
+    </ClCompile>
+    <ClCompile Include="TSceneRender.cpp">
+      <Filter>Private</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

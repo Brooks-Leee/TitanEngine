@@ -36,38 +36,19 @@ ShadowMap* FRHIDX12::CreateShadowMap()
 	return ShadowMapDX;
 }
 
-void FRHIDX12::CreateDescriptorHeaps()
+void FRHIDX12::CreateCbvSrvHeap()
 {
 	D3D12_DESCRIPTOR_HEAP_DESC cbvAndsrvDesc;
-	//mCurrentElementCount = (UINT)mScene->SceneDataArr.size();
 	cbvAndsrvDesc.NumDescriptors = 100;
 	cbvAndsrvDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	cbvAndsrvDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	cbvAndsrvDesc.NodeMask = 0;
-
 	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&cbvAndsrvDesc, IID_PPV_ARGS(&mCbvSrvHeap)));
 
-	// allocate heap memory for shadow map pass
-	// 
-	// 
-	//auto CbvSrvCPUHeapStart = mCbvSrvHeap->GetCPUDescriptorHandleForHeapStart();
-	//auto CbvSrvGPUHeapStart = mCbvSrvHeap->GetGPUDescriptorHandleForHeapStart();
-	//auto DsvCPUStart = mDsvHeap->GetCPUDescriptorHandleForHeapStart();
-
-	//UINT descriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	//UINT dsvDesSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
-	//
-	//ShadowMapDX12* shadowMapDX = static_cast<ShadowMapDX12*>(shadowmap);
-
-	//shadowMapDX->BuildDescriptors(
-	//	CD3DX12_CPU_DESCRIPTOR_HANDLE(CbvSrvCPUHeapStart, 50, descriptorSize),
-	//	CD3DX12_GPU_DESCRIPTOR_HANDLE(CbvSrvGPUHeapStart, 50, descriptorSize),
-	//	CD3DX12_CPU_DESCRIPTOR_HANDLE(DsvCPUStart, 1, dsvDesSize));
 }
 
  StaticMesh* FRHIDX12::CreateMeshBuffer(FMeshData* meshData)
 {
-	//mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSO.Get());
 
 	auto Geo = new TMeshBufferDX12();
 	std::vector<Vertex> vertices;
@@ -92,10 +73,6 @@ void FRHIDX12::CreateDescriptorHeaps()
 	std::vector<uint32_t> indices;
 	indices.resize(meshData->indices.size());
 	indices = meshData->indices;
-
-	//std::shared_ptr<MeshGeometry> Geo = std::make_shared<MeshGeometry>();
-	
-
 
 	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
 	const UINT ibByteSize = (UINT)indices.size() * sizeof(uint32_t);
@@ -127,13 +104,6 @@ void FRHIDX12::CreateDescriptorHeaps()
 	Geo->DrawArgs[meshData->AssetPath] = submesh;
 
 	Geo->StaticMeshInfo.AssetPath = meshData->AssetPath;
-	/*mGeoMap[meshData->AssetPath] = std::move(Geo);
-	mGeoArr.push_back(Geo);*/
-	
-
-	//ThrowIfFailed(mCommandList->Close());
-	//ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
-	//mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
 
 	return Geo;
 }
@@ -142,9 +112,7 @@ void FRHIDX12::CreateDescriptorHeaps()
 void FRHIDX12::CreateConstantBuffer()
 {
 	
-	//mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr);
 	ResetCommandList();
-
 
 	mCurrentElementCount = (UINT)mScene->SceneDataArr.size();
 	mObjectCB = std::make_unique<UploadBuffer<ObjectConstants>>(md3dDevice.Get(), mCurrentElementCount, true);
@@ -304,7 +272,6 @@ void FRHIDX12::EndDraw()
 
 void FRHIDX12::CreateTexture(std::shared_ptr<TTexTure> Texture, UINT index)
 {
-	//ResetCommandList();
 
 	auto renderTex = std::make_shared<TTextureDX12>();
 
@@ -314,10 +281,6 @@ void FRHIDX12::CreateTexture(std::shared_ptr<TTexTure> Texture, UINT index)
 	ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(), mCommandList.Get(), renderTex->Filename.c_str(), renderTex->Resource, renderTex->UploadHeap));
 	
 	mTextures[renderTex->Name] = std::move(renderTex);
-	//CloseCommandList();
-	//ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
-	//mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-
 
 	auto Tex = mTextures[Texture->Name]->Resource;
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -333,7 +296,6 @@ void FRHIDX12::CreateTexture(std::shared_ptr<TTexTure> Texture, UINT index)
 	heapCPUHandle.Offset(mTextures[Texture->Name]->TexIndex, DescriptorSize);
 	
 	md3dDevice->CreateShaderResourceView(Tex.Get(), &srvDesc, heapCPUHandle);
-
 }
 
 void FRHIDX12::CreateMaterials()
@@ -354,7 +316,6 @@ void FRHIDX12::CreateMaterials()
 	rock->diffuseSrvHeapIndex = mTextures["rockTex"]->TexIndex;
 	rock->matCBIndex = 1;
 
-
 	auto brick = std::make_shared<TMaterial>();
 	brick->name = "brick";
 	brick->diffuseAlbedo = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -362,7 +323,6 @@ void FRHIDX12::CreateMaterials()
 	brick->roughness = 0.25f;
 	brick->diffuseSrvHeapIndex = mTextures["brickTex"]->TexIndex;
 	brick->matCBIndex = 2;
-
 
 	mMaterials["water"] = std::move(water);
 	mMaterials["rock"] = std::move(rock);
@@ -525,44 +485,43 @@ void FRHIDX12::UpdateMaterialCB()
 		matConstants.roughness = mat->roughness;
 		mMaterialCB->CopyData(mat->matCBIndex, matConstants);
 	}
-
 }
 
-void FRHIDX12::UpdateShadowPass(GameTimer& gt)
+void FRHIDX12::UpdateShadowPass(TSceneRender* sceneRender)
 {
-	TLight* light = TitanEngine::Get()->GetSceneIns()->light;
-	glm::vec3 lightDir = light->LightDirection;
+	//TLight* light = TitanEngine::Get()->GetSceneIns()->light;
+	//glm::vec3 lightDir = light->LightDirection;
 
-	lightDir.y += sin(gt.TotalTime() / 10);
-	
-	float Radius = 3000;
-	glm::vec3 lightPos = -2.0f * Radius * lightDir;
-	glm::mat4x4 lightView = glm::lookAtLH(lightPos, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	//lightDir.y += sin(gt.TotalTime() / 10);
+	//
+	//float Radius = 3000;
+	//glm::vec3 lightPos = -2.0f * Radius * lightDir;
+	//glm::mat4x4 lightView = glm::lookAtLH(lightPos, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
-	glm::vec3 sphereCenterLS = MathHelper::Vector3TransformCoord(glm::vec3(0.0f, 0.0f, 0.0f), lightView);
+	//glm::vec3 sphereCenterLS = MathHelper::Vector3TransformCoord(glm::vec3(0.0f, 0.0f, 0.0f), lightView);
 
-	float l = sphereCenterLS.x - Radius;
-	float b = sphereCenterLS.y - Radius;
-	float n = sphereCenterLS.z - Radius;
-	float r = sphereCenterLS.x + Radius;
-	float t = sphereCenterLS.y + Radius;
-	float f = sphereCenterLS.z + Radius;
+	//float l = sphereCenterLS.x - Radius;
+	//float b = sphereCenterLS.y - Radius;
+	//float n = sphereCenterLS.z - Radius;
+	//float r = sphereCenterLS.x + Radius;
+	//float t = sphereCenterLS.y + Radius;
+	//float f = sphereCenterLS.z + Radius;
 
-	glm::mat4x4 lightProj = glm::orthoLH_ZO(l, r, b, t, n, f);
+	//glm::mat4x4 lightProj = glm::orthoLH_ZO(l, r, b, t, n, f);
 
-	glm::mat4 T(
-		0.5f, 0.0f, 0.0f, 0.0f,
-		0.0f, -0.5f, 0.0f, 0.0f,
-		0.0f, 0.0f, 1.0f, 0.0f,
-		0.5f, 0.5f, 0.0f, 1.0f);
-	glm::mat4 S = lightProj * lightView;
-	glm::mat4 LightVP = glm::transpose(S);
-	glm::mat4 LightTVP = glm::transpose(T * S);
+	//glm::mat4 T(
+	//	0.5f, 0.0f, 0.0f, 0.0f,
+	//	0.0f, -0.5f, 0.0f, 0.0f,
+	//	0.0f, 0.0f, 1.0f, 0.0f,
+	//	0.5f, 0.5f, 0.0f, 1.0f);
+	//glm::mat4 S = lightProj * lightView;
+	//glm::mat4 LightVP = glm::transpose(S);
+	//glm::mat4 LightTVP = glm::transpose(T * S);
 	
 
 	ShadowPassConstants ShadowConstant;
-	ShadowConstant.lightVP = LightVP;
-	ShadowConstant.lightTVP = LightTVP;
+	ShadowConstant.lightVP = sceneRender->LightMap["dirLight"]->lightVP;
+	ShadowConstant.lightTVP = sceneRender->LightMap["dirLight"]->lightTVP;
 
 	mShadowPassCB->CopyData(0, ShadowConstant);
 }
@@ -822,13 +781,8 @@ bool FRHIDX12::Initialize()
 
 	OnResize();
 
-	//RootSignature();
-	//BuildShadersAndInputLayout();
-	//BuildPSO();
-	mSceneBounds.Center = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	mSceneBounds.Radius = sqrtf(3000000);
-
 	BuildDescriptorHeaps();
+	CreateCbvSrvHeap();
 	BuildRootSignature();
 	BuildShadersAndInputLayout();
 	BuildPSO();
