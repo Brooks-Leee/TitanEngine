@@ -3,7 +3,7 @@
 #include "TitanEngine.h"
 #include "TLight.h"
 #include "MathHelper.h"
-#include "Actor.h"
+#include "Primitive.h"
 
 ResourceManager::ResourceManager()
 {
@@ -34,7 +34,7 @@ void ResourceManager::LoadAllActorInMap()
 
 		for (int32_t i = 0; i < ArrLen; i++)
 		{
-			Actor* actor = new Actor();
+			Primitive* actor = new Primitive();
 			ifs.read((char*)&actor->Transform, sizeof(FTransform));
 			int32_t StrLen = 0;
 			ifs.read((char*)&StrLen, sizeof(int32_t));

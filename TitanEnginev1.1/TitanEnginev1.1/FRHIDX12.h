@@ -7,7 +7,7 @@
 #include "ShadowMapDX12.h"
 #include "TMeshBufferDX12.h"
 #include "StaticMesh.h"
-
+#include "TRenderTargetDX12.h"
 
 using Microsoft::WRL::ComPtr;
 using namespace std;
@@ -39,35 +39,37 @@ public:
 
 	virtual void InitRHI(Scene* scene) override;
 	virtual ShadowMap* CreateShadowMap() override;
-	virtual void CreateDescriptorHeaps(ShadowMap* shadowmap) override;
+	virtual void CreateDescriptorHeaps() override;
 	virtual StaticMesh* CreateMeshBuffer(FMeshData* meshData) override;
 	virtual void CreateTexture(std::shared_ptr<TTexTure> Texture, UINT index) override;
 	virtual void CreateMaterials() override;
 	virtual void CreateConstantBuffer() override;
+	virtual TRenderTarget* CreateRenderTarget(RENDERBUFFER_TYPE RTType, int Width, int Height) override;
+	virtual void EndDraw() override;
 
 	virtual void BeginFrame() override;
-	virtual void UpdateObjectCB(Actor* actor, GameTimer& gt) override;
+	virtual void UpdateObjectCB(Primitive* primitive, GameTimer& gt) override;
 	virtual void UpdateMaterialCB() override;
 	virtual void UpdateShadowPass(GameTimer& gt) override;
 	
 	virtual void SetRenderTarget() override;
+	virtual void SetRenderTarget(TRenderTarget* renderTarget) override;
 
 	virtual void SetViewPortAndRects(TViewPort& viewport) override;
-	virtual void SetRenderTarget(int NumRTDescriptors, unsigned __int64 RThandle, bool RTsSingleHandleToDescriptorRange, unsigned __int64 DShandle) override;
 	virtual void SetPipelineState(std::string pso) override;
 
 	virtual void SetPrimitiveTopology(PRIMITIVE_TOPOLOGY primitiveTolology) override;
-	virtual void SetMeshBuffer(Actor* actor) override;
-	virtual void SetShaderData(Actor* actor, ShadowMap* shadowmap) override;
-	virtual void DrawActor(Actor* actor) override;
+	virtual void SetMeshBuffer(Primitive* primitive) override;
+	virtual void SetShaderData(Primitive* primitive, TRenderTarget* renderTarget) override;
+	virtual void DrawActor(Primitive* primitive) override;
+	virtual void ChangeResourceState(TRenderTarget* renderTarget, RESOURCE_STATE stateBefore, RESOURCE_STATE stateAfter) override;
 
-
- 	virtual void Draw(Actor* actor) override;
-	virtual void EndFrame() override;
+ 	virtual void Draw(Primitive* Primiprimitivetive) override;
+	virtual void EndFrame(TRenderTarget* renderTarget) override;
 
 	virtual void SetShadowMapTarget()override;
-	virtual void DrawShadowMap(Actor* actor) override;
-	virtual void EndSHadowMap(ShadowMap* shadowmap) override;
+	virtual void DrawShadowMap(Primitive* primitive) override;
+
 
 
 public:
@@ -97,6 +99,7 @@ public:
 
 	ID3D12Resource* CurrentBackBuffer()const;
 	D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView()const;
+	D3D12_CPU_DESCRIPTOR_HANDLE FRHIDX12::CurrentBackBufferView(int CurrentBackBuffer) const;
 	D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilView()const;
 
 	void CalculateFrameStats();

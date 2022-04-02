@@ -4,7 +4,7 @@
 #include "TMaterial.h"
 
 
-class Actor
+class Primitive
 {
 public:
 	FTransform Transform;

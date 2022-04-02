@@ -20,7 +20,6 @@ protected:
 	FRHI* RHI;
 	std::unordered_map<std::string, StaticMesh*> MeshBufferMap;
 	std::unordered_map<std::string, TTexTure*> TextureBufferMap;
-	std::shared_ptr<TRenderTarget> mRenderTarget;
-	ShadowMap* mShadowMap;
+	std::unordered_map<std::string, TRenderTarget*> RenderTargetMap;
 };
 

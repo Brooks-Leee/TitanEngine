@@ -7,7 +7,7 @@
 Scene::Scene()
 {
 	light = new TLight();
-	actor = new Actor();
+	actor = new Primitive();
 }
 
 Scene::~Scene()

@@ -105,8 +105,8 @@ void ShadowMapDX12::BuildResource()
 	texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 	texDesc.Alignment = 0;
 	texDesc.Width = mWidth;
-	texDesc.Height = mHeight;
 	texDesc.DepthOrArraySize = 1;
+	texDesc.Height = mHeight;
 	texDesc.MipLevels = 1;
 	texDesc.Format = mFormat;
 	texDesc.SampleDesc.Count = 1;

@@ -4,7 +4,7 @@
 #include <map>
 #include "Camera.h"
 #include "TLight.h"
-#include "Actor.h"
+#include "Primitive.h"
 
 struct FSceneData
 {
@@ -23,8 +23,8 @@ public:
 
 public:
 	Camera camera;
-	Actor* actor;
-	std::vector<Actor*> SceneDataArr;
+	Primitive* actor;
+	std::vector<Primitive*> SceneDataArr;
 	TLight* light;
 };
 

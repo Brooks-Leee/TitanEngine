@@ -111,7 +111,7 @@
     <ClInclude Include="TLight.h">
       <Filter>Public</Filter>
     </ClInclude>
-    <ClInclude Include="Actor.h">
+    <ClInclude Include="Primitive.h">
       <Filter>Public</Filter>
     </ClInclude>
     <ClInclude Include="TStruct.h">
@@ -127,6 +127,12 @@
       <Filter>Public</Filter>
     </ClInclude>
     <ClInclude Include="ShadowMapDX12.h">
+      <Filter>DX12</Filter>
+    </ClInclude>
+    <ClInclude Include="THeapManager.h">
+      <Filter>DX12</Filter>
+    </ClInclude>
+    <ClInclude Include="THeap.h">
       <Filter>DX12</Filter>
     </ClInclude>
   </ItemGroup>
@@ -215,7 +221,7 @@
     <ClCompile Include="TLight.cpp">
       <Filter>Private</Filter>
     </ClCompile>
-    <ClCompile Include="Actor.cpp">
+    <ClCompile Include="Primitive.cpp">
       <Filter>Private</Filter>
     </ClCompile>
     <ClCompile Include="TStruct.cpp">
@@ -231,6 +237,12 @@
       <Filter>Private</Filter>
     </ClCompile>
     <ClCompile Include="ShadowMapDX12.cpp">
+      <Filter>DX12</Filter>
+    </ClCompile>
+    <ClCompile Include="THeapManager.cpp">
+      <Filter>DX12</Filter>
+    </ClCompile>
+    <ClCompile Include="THeap.cpp">
       <Filter>DX12</Filter>
     </ClCompile>
   </ItemGroup>

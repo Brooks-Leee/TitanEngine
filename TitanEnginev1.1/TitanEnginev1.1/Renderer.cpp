@@ -10,20 +10,18 @@ Renderer::Renderer()
 {
 	FRHI::CreateRHI();
 	RHI = FRHI::Get();
-	mRenderTarget = std::make_shared<TRenderTarget>();
+	
 }
 
 Renderer::~Renderer()
 {
-	delete mShadowMap;
-	mShadowMap = nullptr;
+
 }
 
 void Renderer::Init()
 {
 	RHI->InitRHI(TitanEngine::Get()->GetSceneIns());
-	mShadowMap = RHI->CreateShadowMap();
-	RHI->CreateDescriptorHeaps(mShadowMap);
+	RHI->CreateDescriptorHeaps();
 }
 
 void Renderer::BeginRender()
@@ -52,84 +50,61 @@ void Renderer::BeginRender()
 		actor->MeshBuffer = MeshBufferMap[actor->AssetPath];
 	}
 
+	RenderTargetMap["ShadowMap"] = RHI->CreateRenderTarget(DEPTHSTENCIL_BUFFER, 2048, 2048);
+	RenderTargetMap["Base"] = RHI->CreateRenderTarget(COMMAND_RENDER_BUFFER, 800, 600);
 	RHI->CreateMaterials();
 
 
-	
 }
 
 void Renderer::Run()
 {
-	auto Actors = TitanEngine::Get()->GetSceneIns()->SceneDataArr;
+	auto Primivitives = TitanEngine::Get()->GetSceneIns()->SceneDataArr;
 	TViewPort ShadowViewPort;
-	//ShadowViewPort.ClientHeight = 2048;
-	//ShadowViewPort.ClientWidth = 2048;
+	ShadowViewPort.ClientHeight = 2048;
+	ShadowViewPort.ClientWidth = 2048;
 	ShadowViewPort.Height = 2048;
 	ShadowViewPort.Width = 2048;
-	auto RenderTarget = std::dynamic_pointer_cast<TRenderTargetDX12>(mRenderTarget);
-	auto ShadowMap = static_cast<ShadowMapDX12*>(mShadowMap);
-
 
 	RHI->BeginFrame();
 	// Shadow Pass
 	RHI->SetViewPortAndRects(ShadowViewPort);
-	RHI->SetRenderTarget(0, 0, false, ShadowMap->Dsv().ptr);
+	RHI->SetRenderTarget(RenderTargetMap["ShadowMap"]);
 	RHI->SetPipelineState("opaque_shadow");
 
-	for (auto actor : Actors)
+	for (auto primitive : Primivitives)
 	{
-		RHI->UpdateObjectCB(actor, TitanEngine::Get()->GetTimer());
+		RHI->UpdateObjectCB(primitive, TitanEngine::Get()->GetTimer());
 		RHI->UpdateMaterialCB();
 		RHI->UpdateShadowPass(TitanEngine::Get()->GetTimer());
-		RHI->SetMeshBuffer(actor);
+		RHI->SetMeshBuffer(primitive);
 		RHI->SetPrimitiveTopology(PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		RHI->SetShaderData(actor, ShadowMap);
-		RHI->DrawActor(actor);
+		RHI->SetShaderData(primitive, RenderTargetMap["ShadowMap"]);
+		RHI->DrawActor(primitive);
 	}
-	RHI->EndSHadowMap(mShadowMap);
-
+	RHI->ChangeResourceState(RenderTargetMap["ShadowMap"], RESOURCE_STATE_DEPTH_WRITE, RESOURCE_STATE_GENERIC_READ);
+	RHI->EndDraw();
 
 	// Main Pass
+	RHI->BeginFrame();
 	TViewPort MainViewPort;
 	RHI->SetViewPortAndRects(ShadowViewPort);
-	RHI->SetRenderTarget(1, RenderTarget->CurrentBackBufferView(), true, RenderTarget->DepthStencilBuffer());
+	RHI->SetRenderTarget(RenderTargetMap["Base"]);
 	RHI->SetPipelineState("opaque");
 
-	for (auto actor : Actors)
+	for (auto primitive : Primivitives)
 	{
-		RHI->UpdateObjectCB(actor, TitanEngine::Get()->GetTimer());
+		RHI->UpdateObjectCB(primitive, TitanEngine::Get()->GetTimer());
 		RHI->UpdateMaterialCB();
 		RHI->UpdateShadowPass(TitanEngine::Get()->GetTimer());
-		RHI->SetMeshBuffer(actor);
+		RHI->SetMeshBuffer(primitive);
 		RHI->SetPrimitiveTopology(PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		RHI->SetShaderData(actor, mShadowMap);
-		RHI->DrawActor(actor);
+		RHI->SetShaderData(primitive, RenderTargetMap["Base"]);
+		RHI->DrawActor(primitive);
 	}
-	RHI->EndFrame();
+	RHI->ChangeResourceState(RenderTargetMap["Base"], RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PRESENT);
+	RHI->EndFrame(RenderTargetMap["Base"]);
 
-	// 
-	// 
-	// 
-	//// shadow pass
-	//RHI->SetShadowMapTarget();
-	//for (auto actor : Actors)
-	//{
-	//	RHI->UpdateObjectCB(actor, TitanEngine::Get()->GetTimer());
-	//	RHI->UpdateMaterialCB();
-	//	RHI->UpdateShadowPass(TitanEngine::Get()->GetTimer());
-	//	RHI->DrawShadowMap(actor);
-	//}
-	//RHI->EndSHadowMap();
-
-	//// main pass
-	//RHI->SetRenderTarget();
-	//for (auto actor : Actors)
-	//{
-	//	RHI->UpdateObjectCB(actor, TitanEngine::Get()->GetTimer());
-	//	RHI->UpdateMaterialCB();
-	//	RHI->Draw(actor);
-	//}
-	//RHI->EndFrame();
 }
 
 void Renderer::UpdateScene()

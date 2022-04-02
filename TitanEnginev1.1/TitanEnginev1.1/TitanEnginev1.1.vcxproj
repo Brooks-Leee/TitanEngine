@@ -143,7 +143,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Actor.h" />
+    <ClInclude Include="Primitive.h" />
     <ClInclude Include="Application.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="d3dUtil.h" />
@@ -164,6 +164,8 @@
     <ClInclude Include="StaticMesh.h" />
     <ClInclude Include="MathHelper.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="THeap.h" />
+    <ClInclude Include="THeapManager.h" />
     <ClInclude Include="TLight.h" />
     <ClInclude Include="TMaterial.h" />
     <ClInclude Include="TRenderTarget.h" />
@@ -182,7 +184,7 @@
     <ClInclude Include="WinInput.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Actor.cpp" />
+    <ClCompile Include="Primitive.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="d3dUtil.cpp" />
     <ClCompile Include="DDSTextureLoader.cpp" />
@@ -202,6 +204,8 @@
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="THeap.cpp" />
+    <ClCompile Include="THeapManager.cpp" />
     <ClCompile Include="TLight.cpp" />
     <ClCompile Include="TMaterial.cpp" />
     <ClCompile Include="TRenderTarget.cpp" />
