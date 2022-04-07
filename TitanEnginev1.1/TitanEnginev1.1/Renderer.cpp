@@ -23,6 +23,9 @@ Renderer::~Renderer()
 void Renderer::Init()
 {
 	RHI->InitRHI(TitanEngine::Get()->GetSceneIns());
+	
+
+
 }
 
 void Renderer::BeginRender()
@@ -30,30 +33,40 @@ void Renderer::BeginRender()
 	auto textures = TitanEngine::Get()->GetResourceMgr()->getTextures();
 	auto meshs = TitanEngine::Get()->GetResourceMgr()->getAllMeshData();
 
-	RHI->CreateConstantBuffer();
+	sceneRender->ShaderMap["color"] = RHI->CreateShader("color");
+	sceneRender->ShaderMap["shadow"] = RHI->CreateShader("shadow");
+	sceneRender->PipelineMap["opaque"] = RHI->CreatePipelineState(sceneRender->ShaderMap["color"], "color");
+	sceneRender->PipelineMap["shadow_opaque"] = RHI->CreatePipelineState(sceneRender->ShaderMap["shadow"], "shadow");
 
-	for (UINT i = 0; i < textures.size(); i++)
-	{
-		RHI->CreateTexture(textures[i], i);
-	}
-
-
+	RHI->BeginFrame();
+	// need to create mesh first, cuz we will count the mesh buff index and followed by texture
 	for (auto mesh : meshs)
 	{
 		auto meshBuffer = RHI->CreateMeshBuffer(mesh.second);
 		MeshBufferMap[meshBuffer->GetStaticMesh()->AssetPath] = meshBuffer;
 	}
 
-
-	auto Actors = TitanEngine::Get()->GetSceneIns()->SceneDataArr;
-	for (auto actor : Actors)
+	for (UINT i = 0; i < textures.size(); i++)
 	{
-		actor->MeshBuffer = MeshBufferMap[actor->AssetPath];
+		TTexTure* tex = RHI->CreateTexture(textures[i], i);
+		sceneRender->TextureBufferMap[tex->Name] = tex;    
+	}
+
+	auto Primitives = TitanEngine::Get()->GetSceneIns()->SceneDataArr;
+
+	sceneRender->MaterialMap["brick"] = RHI->CreateMaterial("brick", sceneRender->ShaderMap["shadow"], sceneRender->TextureBufferMap["brickTex"], 0);
+
+
+	for (auto actor : Primitives)
+	{
+		actor->MeshBuffer = std::move(MeshBufferMap[actor->AssetPath]);
+		actor->Material = sceneRender->MaterialMap["brick"];
 	}
 
 	RenderTargetMap["ShadowMap"] = RHI->CreateRenderTarget(DEPTHSTENCIL_BUFFER, 2048, 2048);
 	RenderTargetMap["Base"] = RHI->CreateRenderTarget(COMMAND_RENDER_BUFFER, 800, 600);
-	RHI->CreateMaterials();
+	RHI->CreateConstantBuffer();
+	//RHI->CreateMaterials();
 
 
 }
@@ -110,7 +123,7 @@ void Renderer::Run()
 	// Shadow Pass
 	RHI->SetViewPortAndRects(ShadowViewPort);
 	RHI->SetRenderTarget(RenderTargetMap["ShadowMap"]);
-	RHI->SetPipelineState("opaque_shadow");
+	RHI->SetPipelineState(sceneRender->PipelineMap["shadow_opaque"]);
 
 	for (auto primitive : Primivitives)
 	{
@@ -120,7 +133,7 @@ void Renderer::Run()
 		RHI->SetMeshBuffer(primitive);
 		RHI->SetPrimitiveTopology(PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		RHI->SetShaderData(primitive, RenderTargetMap["ShadowMap"]);
-		RHI->DrawActor(primitive);
+		RHI->DrawMesh(primitive);
 	}
 	RHI->ChangeResourceState(RenderTargetMap["ShadowMap"], RESOURCE_STATE_DEPTH_WRITE, RESOURCE_STATE_GENERIC_READ);
 
@@ -128,7 +141,7 @@ void Renderer::Run()
 	TViewPort MainViewPort;
 	RHI->SetViewPortAndRects(MainViewPort);
 	RHI->SetRenderTarget(RenderTargetMap["Base"]);
-	RHI->SetPipelineState("opaque");
+	RHI->SetPipelineState(sceneRender->PipelineMap["opaque"]);
 
 	for (auto primitive : Primivitives)
 	{
@@ -138,7 +151,7 @@ void Renderer::Run()
 		RHI->SetMeshBuffer(primitive);
 		RHI->SetPrimitiveTopology(PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		RHI->SetShaderData(primitive, RenderTargetMap["Base"]);
-		RHI->DrawActor(primitive);
+		RHI->DrawMesh(primitive);
 	}
 	RHI->ChangeResourceState(RenderTargetMap["Base"], RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PRESENT);
 	RHI->EndFrame(RenderTargetMap["Base"]);

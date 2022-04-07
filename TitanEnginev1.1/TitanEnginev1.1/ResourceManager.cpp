@@ -41,7 +41,7 @@ void ResourceManager::LoadAllActorInMap()
 			actor->AssetPath.resize(StrLen);
 			ifs.read((char*)actor->AssetPath.data(), sizeof(char) * StrLen);
 			actor->AssetPath.erase(actor->AssetPath.size() - 1, 1);
-			actor->HeapIndex = i;
+			actor->PrimitiveMVPIndex = i;
 			scene->SceneDataArr.push_back(actor);
 
 

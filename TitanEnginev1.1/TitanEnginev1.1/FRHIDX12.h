@@ -8,8 +8,8 @@
 #include "TMeshBufferDX12.h"
 #include "StaticMesh.h"
 #include "TRenderTargetDX12.h"
-
-
+#include "TShaderDX12.h"
+#include "TPipelineDX12.h"
 
 using Microsoft::WRL::ComPtr;
 using namespace std;
@@ -40,11 +40,15 @@ public:
 	~FRHIDX12();
 
 	virtual void InitRHI(Scene* scene) override;
-	virtual ShadowMap* CreateShadowMap() override;
+
+	virtual TShader* CreateShader(std::string shaderName) override;
+	virtual TPipeline* CreatePipelineState(TShader* shader, std::string shaderName) override;
+	virtual TMaterial* CreateMaterial(std::string name, TShader* shader, TTexTure* texture, int matIndex) override;
+	virtual void CreateMaterials() override;
+	
 	virtual void CreateCbvSrvHeap() override;
 	virtual StaticMesh* CreateMeshBuffer(FMeshData* meshData) override;
-	virtual void CreateTexture(std::shared_ptr<TTexTure> Texture, UINT index) override;
-	virtual void CreateMaterials() override;
+	virtual TTexTure* CreateTexture(std::shared_ptr<TTexTure> Texture, UINT index) override;
 	virtual void CreateConstantBuffer() override;
 	virtual TRenderTarget* CreateRenderTarget(RENDERBUFFER_TYPE RTType, int Width, int Height) override;
 	virtual void EndDraw() override;
@@ -54,22 +58,20 @@ public:
 	virtual void UpdateMaterialCB() override;
 	virtual void UpdateShadowPass(TSceneRender* sceneRender) override;
 	
-	virtual void SetRenderTarget() override;
 	virtual void SetRenderTarget(TRenderTarget* renderTarget) override;
 
 	virtual void SetViewPortAndRects(TViewPort& viewport) override;
-	virtual void SetPipelineState(std::string pso) override;
+	virtual void SetPipelineState(TPipeline* pipeline) override;
 
 	virtual void SetPrimitiveTopology(PRIMITIVE_TOPOLOGY primitiveTolology) override;
 	virtual void SetMeshBuffer(Primitive* primitive) override;
 	virtual void SetShaderData(Primitive* primitive, TRenderTarget* renderTarget) override;
-	virtual void DrawActor(Primitive* primitive) override;
+	virtual void DrawMesh(Primitive* primitive) override;
 	virtual void ChangeResourceState(TRenderTarget* renderTarget, RESOURCE_STATE stateBefore, RESOURCE_STATE stateAfter) override;
 
- 	virtual void Draw(Primitive* Primiprimitivetive) override;
+
 	virtual void EndFrame(TRenderTarget* renderTarget) override;
 
-	virtual void SetShadowMapTarget()override;
 	virtual void DrawShadowMap(Primitive* primitive) override;
 
 
@@ -90,7 +92,6 @@ public:
 
 	void FlushCommandQueue();
 
-	void BuildDescriptorHeaps();
 	void BuildDescriptor();
 	void BuildRootSignature();
 	void BuildShadersAndInputLayout();
@@ -159,8 +160,6 @@ private:
 
 	Scene* mScene = nullptr;
 
-	std::map<std::string, int> mTexTableIndex;
-	std::map<std::string, std::shared_ptr<TTextureDX12>> mTextures;
 
 	std::unique_ptr<MeshGeometry> mGeo = nullptr;
 	std::vector<std::shared_ptr<MeshGeometry>> mGeoArr;
@@ -188,7 +187,6 @@ private:
 	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> uploadBufferArr;
 
 	ComPtr<ID3D12PipelineState> mPSO = nullptr;
-	std::unordered_map<std::string, ComPtr<ID3D12PipelineState>> mPSOs;
 
 
 	glm::mat4x4 mWorld = MathHelper::Identity4x4glm();
@@ -198,14 +196,9 @@ private:
 	POINT mLastMousePos;
 
 	int mLastElementCount = 0;
-	int mCurrentElementCount = 100;
-
-
+	int mCurrentElementCount = 0;
 
 	FMeshData* mLoadedStruct;
-
-
-
 
 };
 

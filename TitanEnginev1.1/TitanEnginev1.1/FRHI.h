@@ -8,6 +8,8 @@
 #include "ShadowMap.h"
 #include "TRenderTarget.h"
 #include "TSceneRender.h"
+#include "TShader.h"
+#include "TPipeline.h"
 
 class FRHI
 {
@@ -19,12 +21,16 @@ public:
 
 
 	virtual void InitRHI(Scene* scene) = 0;
-	virtual ShadowMap* CreateShadowMap() = 0;
+
+	virtual TShader* CreateShader(std::string shaderName) = 0;
+	virtual TPipeline* CreatePipelineState(TShader* shader, std::string shaderName) = 0;
+	virtual TMaterial* CreateMaterial(std::string name, TShader* shader, TTexTure* texture, int matIndex) = 0;
+	virtual void CreateMaterials() = 0;
+
 	virtual void CreateCbvSrvHeap() = 0;
 	virtual StaticMesh* CreateMeshBuffer(FMeshData* meshData) = 0;
 	virtual void CreateConstantBuffer() = 0;
-	virtual void CreateTexture(std::shared_ptr<TTexTure> Texture, UINT index) = 0;
-	virtual void CreateMaterials() = 0;
+	virtual TTexTure* CreateTexture(std::shared_ptr<TTexTure> Texture, UINT index) = 0;
 	virtual TRenderTarget* CreateRenderTarget(RENDERBUFFER_TYPE RTType, int Width, int Height) = 0;
 	virtual void EndDraw() = 0;
 
@@ -34,21 +40,17 @@ public:
 	virtual void UpdateShadowPass(TSceneRender* sceneRender) = 0;
 
 	virtual void SetViewPortAndRects(TViewPort& viewport) = 0;
-	virtual void SetRenderTarget() = 0;
 	virtual void SetRenderTarget(TRenderTarget* renderTarget) = 0;
-	virtual void SetPipelineState(std::string pso) = 0;
+	virtual void SetPipelineState(TPipeline* pipeline) = 0;
 	virtual void SetShaderData(Primitive* primitive, TRenderTarget* renderTarget) = 0;
 	virtual void ChangeResourceState(TRenderTarget* renderTarget, RESOURCE_STATE stateBefore, RESOURCE_STATE stateAfter) = 0;
 
 	virtual void SetPrimitiveTopology(PRIMITIVE_TOPOLOGY primitiveTolology) = 0;
 	virtual void SetMeshBuffer(Primitive* primitive) = 0;
-	virtual void DrawActor(Primitive* primitive) = 0;
+	virtual void DrawMesh(Primitive* primitive) = 0;
 
 
-	virtual void Draw(Primitive* primitive) = 0;
 	virtual void EndFrame(TRenderTarget* renderTarget) = 0;
-
-	virtual void SetShadowMapTarget() = 0;
 	virtual void DrawShadowMap(Primitive* primitive) = 0;
 
 

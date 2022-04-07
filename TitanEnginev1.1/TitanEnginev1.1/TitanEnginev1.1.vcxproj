@@ -168,6 +168,8 @@
     <ClInclude Include="THeapManager.h" />
     <ClInclude Include="TLight.h" />
     <ClInclude Include="TMaterial.h" />
+    <ClInclude Include="TPipeline.h" />
+    <ClInclude Include="TPipelineDX12.h" />
     <ClInclude Include="TRenderTarget.h" />
     <ClInclude Include="TRenderTargetDX12.h" />
     <ClInclude Include="TRHIResource.h" />
@@ -176,6 +178,8 @@
     <ClInclude Include="TMeshBufferDX12.h" />
     <ClInclude Include="TResource.h" />
     <ClInclude Include="TSceneRender.h" />
+    <ClInclude Include="TShader.h" />
+    <ClInclude Include="TShaderDX12.h" />
     <ClInclude Include="TStruct.h" />
     <ClInclude Include="TTexTure.h" />
     <ClInclude Include="TTextureDX12.h" />
@@ -209,6 +213,8 @@
     <ClCompile Include="THeapManager.cpp" />
     <ClCompile Include="TLight.cpp" />
     <ClCompile Include="TMaterial.cpp" />
+    <ClCompile Include="TPipeline.cpp" />
+    <ClCompile Include="TPipelineDX12.cpp" />
     <ClCompile Include="TRenderTarget.cpp" />
     <ClCompile Include="TRenderTargetDX12.cpp" />
     <ClCompile Include="TRHIResource.cpp" />
@@ -217,6 +223,8 @@
     <ClCompile Include="TMeshBufferDX12.cpp" />
     <ClCompile Include="TResource.cpp" />
     <ClCompile Include="TSceneRender.cpp" />
+    <ClCompile Include="TShader.cpp" />
+    <ClCompile Include="TShaderDX12.cpp" />
     <ClCompile Include="TStruct.cpp" />
     <ClCompile Include="TTexTure.cpp" />
     <ClCompile Include="TTextureDX12.cpp" />

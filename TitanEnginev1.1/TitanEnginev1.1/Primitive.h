@@ -9,10 +9,11 @@ class Primitive
 public:
 	FTransform Transform;
 	std::string AssetPath;
-	UINT HeapIndex;
+	UINT PrimitiveMVPIndex;
+
 
 	StaticMesh* MeshBuffer;
-	TTexTure* TextureBuffer;
-	TMaterial* MaterialBuffer;
+	TMaterial* Material;
+
 };
 

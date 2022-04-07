@@ -22,7 +22,6 @@ protected:
 	FRHI* RHI;
 	TSceneRender* sceneRender;
 	std::unordered_map<std::string, StaticMesh*> MeshBufferMap;
-	std::unordered_map<std::string, TTexTure*> TextureBufferMap;
 	std::unordered_map<std::string, TRenderTarget*> RenderTargetMap;
 };
 

@@ -138,6 +138,18 @@
     <ClInclude Include="TSceneRender.h">
       <Filter>Public</Filter>
     </ClInclude>
+    <ClInclude Include="TPipelineDX12.h">
+      <Filter>DX12</Filter>
+    </ClInclude>
+    <ClInclude Include="TShader.h">
+      <Filter>Public</Filter>
+    </ClInclude>
+    <ClInclude Include="TPipeline.h">
+      <Filter>Public</Filter>
+    </ClInclude>
+    <ClInclude Include="TShaderDX12.h">
+      <Filter>DX12</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GameTimer.cpp">
@@ -250,6 +262,18 @@
     </ClCompile>
     <ClCompile Include="TSceneRender.cpp">
       <Filter>Private</Filter>
+    </ClCompile>
+    <ClCompile Include="TPipelineDX12.cpp">
+      <Filter>DX12</Filter>
+    </ClCompile>
+    <ClCompile Include="TShader.cpp">
+      <Filter>Private</Filter>
+    </ClCompile>
+    <ClCompile Include="TPipeline.cpp">
+      <Filter>Private</Filter>
+    </ClCompile>
+    <ClCompile Include="TShaderDX12.cpp">
+      <Filter>DX12</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

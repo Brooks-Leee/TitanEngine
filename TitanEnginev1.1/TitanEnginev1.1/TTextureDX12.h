@@ -13,5 +13,6 @@ public:
 	Microsoft::WRL::ComPtr<ID3D12Resource> UploadHeap = nullptr;
 
 	UINT TexIndex = 0;
+	CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle;
 };
 
