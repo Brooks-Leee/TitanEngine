@@ -30,6 +30,20 @@ void FRHIDX12::InitRHI(Scene* scene)
 
 }
 
+void FRHIDX12::ResetCommand()
+{
+	ResetCommandList();
+}
+
+void FRHIDX12::ExecuteCommand()
+{
+	ThrowIfFailed(mCommandList->Close());
+	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
+	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+	FlushCommandQueue();
+}
+
+
 TShader* FRHIDX12::CreateShader(std::string shaderName)
 {
 	TShaderDX12* shaderDX = new TShaderDX12();
@@ -49,7 +63,8 @@ TShader* FRHIDX12::CreateShader(std::string shaderName)
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 28, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 44, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+		{ "TANGENTX", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 44, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 60, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
 	};
 
 	return shaderDX;
@@ -114,14 +129,14 @@ TMaterial* FRHIDX12::CreateMaterial(std::string name, TShader* shader, TTexTure*
 	TTextureDX12* textureDX = static_cast<TTextureDX12*>(texture);
 
 	material->shader = shader;
-	material->texture = texture;
+	material->textures.push_back(texture);
 	material->name = name;
 	material->diffuseSrvHeapIndex = textureDX->TexIndex;
 	material->matCBIndex = matIndex;
 
-	material->diffuseAlbedo = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	material->diffuseAlbedo = glm::vec4(.5f, .5f, .5f, 1.0f);
 	material->fresnelR0 = glm::vec3(0.2f, 0.2f, 0.2f);
-	material->roughness = 0.0f;
+	material->roughness = 0.1f;
 
 	return material;
 }
@@ -155,6 +170,11 @@ void FRHIDX12::CreateCbvSrvHeap()
 		vertices[i].Normal.y = meshData->normals[i].y;
 		vertices[i].Normal.z = meshData->normals[i].z;
 		vertices[i].Normal.w = meshData->normals[i].w;
+
+		vertices[i].TangentX.x = meshData->tangentx[i].x;
+		vertices[i].TangentX.y = meshData->tangentx[i].y;
+		vertices[i].TangentX.z = meshData->tangentx[i].z;
+		vertices[i].TangentX.w = meshData->tangentx[i].w;
 
 		vertices[i].Texcoord.x = meshData->texcoords[i].u;
 		vertices[i].Texcoord.y = meshData->texcoords[i].v;
@@ -195,7 +215,7 @@ void FRHIDX12::CreateCbvSrvHeap()
 
 	Geo->StaticMeshInfo.AssetPath = meshData->AssetPath;
 
-	mCurrentElementCount++;
+	//mCurrentElementCount++;
 	return Geo;
 }
 
@@ -203,8 +223,6 @@ void FRHIDX12::CreateCbvSrvHeap()
 void FRHIDX12::CreateConstantBuffer()
 {
 	
-
-
 	mCurrentElementCount = (UINT)mScene->SceneDataArr.size();
 	mObjectCB = std::make_unique<UploadBuffer<ObjectConstants>>(md3dDevice.Get(), mCurrentElementCount, true);
 	mMaterialCB = std::make_unique<UploadBuffer<MaterialConstants>>(md3dDevice.Get(), 3, true);
@@ -231,12 +249,6 @@ void FRHIDX12::CreateConstantBuffer()
 		md3dDevice->CreateConstantBufferView(&cbvDesc, heapCPUHandle);
 		heapCPUHandle.Offset(1, DescriptorSize);
 	}
-
-
-	ThrowIfFailed(mCommandList->Close());
-	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
-	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-	FlushCommandQueue();
 
 }
 
@@ -397,41 +409,38 @@ TTexTure* FRHIDX12::CreateTexture(std::shared_ptr<TTexTure> Texture, UINT index)
 	return TextureDX;
 }
 
-void FRHIDX12::CreateMaterials()
-{
-	//auto water = std::make_shared<TMaterial>();
-	//water->name = "water";
-	//water->diffuseAlbedo = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	//water->fresnelR0 = glm::vec3(0.2f, 0.2f, 0.2f);
-	//water->roughness = 0.0f;
-	//water->diffuseSrvHeapIndex = mTextures["waterTex"]->TexIndex;
-	//water->matCBIndex = 0;
+//void FRHIDX12::CreateMaterials()
+//{
+//	auto water = std::make_shared<TMaterial>();
+//	water->name = "water";
+//	water->diffuseAlbedo = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+//	water->fresnelR0 = glm::vec3(0.2f, 0.2f, 0.2f);
+//	water->roughness = 0.0f;
+//	water->diffuseSrvHeapIndex = mTextures["waterTex"]->TexIndex;
+//	water->matCBIndex = 0;
+//
+//	auto rock = std::make_shared<TMaterial>();
+//	rock->name = "rock";
+//	rock->diffuseAlbedo = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+//	rock->fresnelR0 = glm::vec3(0.01f, 0.01f, 0.01f);
+//	rock->roughness = 0.125f;
+//	rock->diffuseSrvHeapIndex = mTextures["rockTex"]->TexIndex;
+//	rock->matCBIndex = 1;
+//
+//	auto brick = std::make_shared<TMaterial>();
+//	brick->name = "brick";
+//	brick->diffuseAlbedo = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+//	brick->fresnelR0 = glm::vec3(0.1f, 0.1f, 0.1f);
+//	brick->roughness = 0.25f;
+//	brick->diffuseSrvHeapIndex = mTextures["brickTex"]->TexIndex;
+//	brick->matCBIndex = 2;
+//
+//	mMaterials["water"] = std::move(water);
+//	mMaterials["rock"] = std::move(rock);
+//	mMaterials["brick"] = std::move(brick);
+//
+//}
 
-	//auto rock = std::make_shared<TMaterial>();
-	//rock->name = "rock";
-	//rock->diffuseAlbedo = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	//rock->fresnelR0 = glm::vec3(0.01f, 0.01f, 0.01f);
-	//rock->roughness = 0.125f;
-	//rock->diffuseSrvHeapIndex = mTextures["rockTex"]->TexIndex;
-	//rock->matCBIndex = 1;
-
-	//auto brick = std::make_shared<TMaterial>();
-	//brick->name = "brick";
-	//brick->diffuseAlbedo = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	//brick->fresnelR0 = glm::vec3(0.1f, 0.1f, 0.1f);
-	//brick->roughness = 0.25f;
-	//brick->diffuseSrvHeapIndex = mTextures["brickTex"]->TexIndex;
-	//brick->matCBIndex = 2;
-
-	//mMaterials["water"] = std::move(water);
-	//mMaterials["rock"] = std::move(rock);
-	//mMaterials["brick"] = std::move(brick);
-
-	ThrowIfFailed(mCommandList->Close());
-	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
-	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
-	FlushCommandQueue();
-}
 
 
 void FRHIDX12::SetViewPortAndRects(TViewPort& viewport)
@@ -531,7 +540,7 @@ void FRHIDX12::BeginFrame()
 	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
 }
 
-void FRHIDX12::UpdateObjectCB(Primitive* actor, GameTimer& gt)
+void FRHIDX12::UpdateObjectCB(Primitive* actor, GameTimer& gt, TSceneRender* sceneRender)
 {
 	ObjectConstants objConstants;
 	mScene->camera.UpdateViewMat();
@@ -567,22 +576,24 @@ void FRHIDX12::UpdateObjectCB(Primitive* actor, GameTimer& gt)
 	objConstants.Location = location;
 	objConstants.Rotation = rotation;
 	objConstants.Scale = scale;
+	objConstants.light.LightColor = sceneRender->LightMap["dirLight"]->LightColor;
+	objConstants.light.LightDirection = sceneRender->LightMap["dirLight"]->LightDirection;
+	objConstants.light.Intensity = sceneRender->LightMap["dirLight"]->Intensity;
 	// put the constant object into constant buffer which is a Upload Buffer
 	mObjectCB->CopyData(actor->PrimitiveMVPIndex, objConstants);
 
 }
 
-void FRHIDX12::UpdateMaterialCB()
+void FRHIDX12::UpdateMaterialCB(Primitive* primitive)
 {
 	MaterialConstants matConstants;
-	for (auto material : mMaterials)
-	{
-		auto mat = material.second.get();
-		matConstants.diffuseAlbedo = mat->diffuseAlbedo;
-		matConstants.fresnelR0 = mat->fresnelR0;
-		matConstants.roughness = mat->roughness;
-		mMaterialCB->CopyData(mat->matCBIndex, matConstants);
-	}
+	auto mat = primitive->Material;
+
+	matConstants.diffuseAlbedo = mat->diffuseAlbedo;
+	matConstants.fresnelR0 = mat->fresnelR0;
+	matConstants.roughness = mat->roughness;
+	mMaterialCB->CopyData(mat->matCBIndex, matConstants);
+
 }
 
 void FRHIDX12::UpdateShadowPass(TSceneRender* sceneRender)
@@ -641,7 +652,6 @@ void FRHIDX12::SetShaderData(Primitive* actor, TRenderTarget* renderTarget)
 	heapGPUHandle.Offset(actor->PrimitiveMVPIndex, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
 	mCommandList->SetGraphicsRootDescriptorTable(0, heapGPUHandle);
 
-	int texIndex = actor->Material->diffuseSrvHeapIndex;
 
 	//if (DXMeshBuffer->Name == "Plane.titan")
 	//{
@@ -664,9 +674,19 @@ void FRHIDX12::SetShaderData(Primitive* actor, TRenderTarget* renderTarget)
 
 
 	{
+
+		int texIndex = actor->Material->diffuseSrvHeapIndex;
+		int normalMapIndex = actor->Material->normalMapIndex;
+
 		heapGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mCbvSrvHeap->GetGPUDescriptorHandleForHeapStart());
 		heapGPUHandle.Offset(texIndex, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
 		mCommandList->SetGraphicsRootDescriptorTable(1, heapGPUHandle);
+
+		heapGPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mCbvSrvHeap->GetGPUDescriptorHandleForHeapStart());
+		heapGPUHandle.Offset(normalMapIndex, md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+		mCommandList->SetGraphicsRootDescriptorTable(6, heapGPUHandle);
+
+
 
 		D3D12_GPU_VIRTUAL_ADDRESS matCBAddress = mMaterialCB->Resource()->GetGPUVirtualAddress() + actor->Material->matCBIndex * matCBByteSize;
 		mCommandList->SetGraphicsRootConstantBufferView(3, matCBAddress);
@@ -976,12 +996,12 @@ void FRHIDX12::BuildRootSignature()
 	cbvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
 	CD3DX12_DESCRIPTOR_RANGE shadowMapTable;
 	shadowMapTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
-	//CD3DX12_DESCRIPTOR_RANGE normalTable;
-	//normalTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
+	CD3DX12_DESCRIPTOR_RANGE normalTable;
+	normalTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2);
 
 
 
-	CD3DX12_ROOT_PARAMETER slotRootParameter[6]; 
+	CD3DX12_ROOT_PARAMETER slotRootParameter[7]; 
 	slotRootParameter[0].InitAsDescriptorTable(1, &cbvTable);
 	slotRootParameter[1].InitAsDescriptorTable(1, &texTable, D3D12_SHADER_VISIBILITY_PIXEL);
 	// camera location
@@ -991,11 +1011,12 @@ void FRHIDX12::BuildRootSignature()
 	// shadow map constant buffer
 	slotRootParameter[4].InitAsConstantBufferView(3);
 	slotRootParameter[5].InitAsDescriptorTable(1, &shadowMapTable);
+	slotRootParameter[6].InitAsDescriptorTable(1, &normalTable, D3D12_SHADER_VISIBILITY_PIXEL);
 
 
 	auto staticSamplers = GetStaticSamplers();
 	// A root signature is an array of root parameters.
-	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(6, slotRootParameter, (UINT)staticSamplers.size(), staticSamplers.data(),
+	CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(7, slotRootParameter, (UINT)staticSamplers.size(), staticSamplers.data(),
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
 	// create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer

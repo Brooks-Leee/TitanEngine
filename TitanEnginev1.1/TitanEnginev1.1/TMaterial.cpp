@@ -9,3 +9,9 @@ TMaterial::TMaterial()
 TMaterial::~TMaterial()
 {
 }
+
+void TMaterial::addTexture(TTexTure* texture)
+{
+	textures.push_back(texture);
+	this->normalMapIndex = this->diffuseSrvHeapIndex + 1;
+}

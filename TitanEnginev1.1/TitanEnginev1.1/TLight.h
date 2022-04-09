@@ -1,5 +1,13 @@
 #pragma once
 #include "MathHelper.h"
+struct Light
+{
+	glm::vec4 LightColor;
+	glm::vec3 LightDirection;
+	float Intensity;
+};
+
+
 
 
 class TLight

@@ -55,7 +55,7 @@ void Renderer::BeginRender()
 	auto Primitives = TitanEngine::Get()->GetSceneIns()->SceneDataArr;
 
 	sceneRender->MaterialMap["brick"] = RHI->CreateMaterial("brick", sceneRender->ShaderMap["shadow"], sceneRender->TextureBufferMap["brickTex"], 0);
-
+	sceneRender->MaterialMap["brick"]->addTexture(sceneRender->TextureBufferMap["brickNormalTex"]);
 
 	for (auto actor : Primitives)
 	{
@@ -66,7 +66,7 @@ void Renderer::BeginRender()
 	RenderTargetMap["ShadowMap"] = RHI->CreateRenderTarget(DEPTHSTENCIL_BUFFER, 2048, 2048);
 	RenderTargetMap["Base"] = RHI->CreateRenderTarget(COMMAND_RENDER_BUFFER, 800, 600);
 	RHI->CreateConstantBuffer();
-	//RHI->CreateMaterials();
+	RHI->ExecuteCommand();
 
 
 }
@@ -74,14 +74,16 @@ void Renderer::BeginRender()
 void Renderer::BuildLight()
 {
 	TLight* light = TitanEngine::Get()->GetSceneIns()->light;
-	glm::vec3 lightDir = light->LightDirection;
+	//glm::vec3 lightDir = light->LightDirection;
 	
 	auto gt = TitanEngine::Get()->GetTimer();
 
-	lightDir.y += sin(gt.TotalTime() / 10);
+	//light->LightDirection.y += sin(gt.TotalTime() / 10);
+
+	//OutputDebugStringA()
 
 	float Radius = 3000;
-	glm::vec3 lightPos = -2.0f * Radius * lightDir;
+	glm::vec3 lightPos = -2.0f * Radius * light->LightDirection;
 	glm::mat4x4 lightView = glm::lookAtLH(lightPos, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
 	glm::vec3 sphereCenterLS = MathHelper::Vector3TransformCoord(glm::vec3(0.0f, 0.0f, 0.0f), lightView);
@@ -104,7 +106,8 @@ void Renderer::BuildLight()
 
 	light->lightVP = glm::transpose(S);
 	light->lightTVP = glm::transpose(T*S);
-	
+	//light->LightDirection = lightDir;
+
 	sceneRender->LightMap["dirLight"] = light;
 
 }
@@ -127,8 +130,8 @@ void Renderer::Run()
 
 	for (auto primitive : Primivitives)
 	{
-		RHI->UpdateObjectCB(primitive, TitanEngine::Get()->GetTimer());
-		RHI->UpdateMaterialCB();
+		RHI->UpdateObjectCB(primitive, TitanEngine::Get()->GetTimer(), sceneRender);
+		RHI->UpdateMaterialCB(primitive);
 		RHI->UpdateShadowPass(sceneRender);
 		RHI->SetMeshBuffer(primitive);
 		RHI->SetPrimitiveTopology(PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -145,8 +148,8 @@ void Renderer::Run()
 
 	for (auto primitive : Primivitives)
 	{
-		RHI->UpdateObjectCB(primitive, TitanEngine::Get()->GetTimer());
-		RHI->UpdateMaterialCB();
+		RHI->UpdateObjectCB(primitive, TitanEngine::Get()->GetTimer(),sceneRender);
+		RHI->UpdateMaterialCB(primitive);
 		RHI->UpdateShadowPass(sceneRender);
 		RHI->SetMeshBuffer(primitive);
 		RHI->SetPrimitiveTopology(PRIMITIVE_TOPOLOGY_TRIANGLELIST);

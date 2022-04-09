@@ -186,7 +186,7 @@ struct MeshGeometry
 	}
 };
 
-struct Light
+struct DXLight
 {
     DirectX::XMFLOAT3 Strength = { 0.5f, 0.5f, 0.5f };
     float FalloffStart = 1.0f;                          // point/spot light only

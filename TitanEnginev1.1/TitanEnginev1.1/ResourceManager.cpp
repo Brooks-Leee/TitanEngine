@@ -97,7 +97,11 @@ StaticMesh* ResourceManager::LoadStaticMesh(const std::string& FilePath)
 		ifs.read((char*)&normalsLen, sizeof(int32_t));
 		staticMesh->StaticMeshInfo.normals.resize(normalsLen);
 		ifs.read((char*)staticMesh->StaticMeshInfo.normals.data(), normalsLen * sizeof(FVector4));
-	//	pos.push_back(ifs.tellg());
+
+		int32_t tangantxLen = 0;
+		ifs.read((char*)&tangantxLen, sizeof(int32_t));
+		staticMesh->StaticMeshInfo.tangentx.resize(tangantxLen);
+		ifs.read((char*)staticMesh->StaticMeshInfo.tangentx.data(), tangantxLen * sizeof(FVector4));
 
 		int32_t uvLength = 0;
 		ifs.read((char*)&uvLength, sizeof(int32_t));
@@ -125,9 +129,14 @@ void ResourceManager::LoadTextures()
 	brickTex->Name = "brickTex";
 	brickTex->Filename = L"Assets/Texture/brick.dds";
 
+	auto brickNormalTex = std::make_shared<TTexTure>();
+	brickNormalTex->Name = "brickNormalTex";
+	brickNormalTex->Filename = L"Assets/Texture/brick_normal.dds";
+
+	mTextures.push_back(brickTex);
+	mTextures.push_back(brickNormalTex);
 	mTextures.push_back(waterTex);
 	mTextures.push_back(rockTex);
-	mTextures.push_back(brickTex);
 }
 
 void ResourceManager::LoadLights()

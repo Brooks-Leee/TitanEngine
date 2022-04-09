@@ -7,6 +7,7 @@ struct Vertex
 	glm::vec3 Pos;
 	glm::vec4 Color;
 	glm::vec4 Normal;
+	glm::vec4 TangentX;
 	glm::vec2 Texcoord;
 };
 
@@ -20,6 +21,7 @@ struct FMeshData
 	std::vector<FVector> Vertices;
 	std::vector<uint32_t> indices;
 	std::vector<FVector4> normals;
+	std::vector<FVector4> tangentx;
 	std::vector<FVector2> texcoords;
 };
 

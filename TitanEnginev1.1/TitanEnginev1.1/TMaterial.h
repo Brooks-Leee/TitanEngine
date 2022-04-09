@@ -18,14 +18,20 @@ public:
 	TMaterial();
 	~TMaterial();
 
+public:
+	void addTexture(TTexTure* texture);
+
+
 
 public:
 	std::string name;	
-	int matCBIndex;
-	int diffuseSrvHeapIndex;
+	int matCBIndex = -1;
+	int diffuseSrvHeapIndex = -1;
+	int normalMapIndex = -1;
 	//int normalSrvHeapIndex;
 
-	TTexTure* texture;
+
+	std::vector<TTexTure*> textures;
 	TShader* shader;
 
 

@@ -23,6 +23,7 @@ struct ObjectConstants
 	glm::mat4x4 Location;
 	glm::mat4x4 Rotation;
 	glm::mat4x4 Scale;
+	Light light;
 	float gTime;
 };
 
@@ -40,11 +41,13 @@ public:
 	~FRHIDX12();
 
 	virtual void InitRHI(Scene* scene) override;
+	virtual void ResetCommand() override;
+	virtual void ExecuteCommand() override;
+
 
 	virtual TShader* CreateShader(std::string shaderName) override;
 	virtual TPipeline* CreatePipelineState(TShader* shader, std::string shaderName) override;
 	virtual TMaterial* CreateMaterial(std::string name, TShader* shader, TTexTure* texture, int matIndex) override;
-	virtual void CreateMaterials() override;
 	
 	virtual void CreateCbvSrvHeap() override;
 	virtual StaticMesh* CreateMeshBuffer(FMeshData* meshData) override;
@@ -54,8 +57,8 @@ public:
 	virtual void EndDraw() override;
 
 	virtual void BeginFrame() override;
-	virtual void UpdateObjectCB(Primitive* primitive, GameTimer& gt) override;
-	virtual void UpdateMaterialCB() override;
+	virtual void UpdateObjectCB(Primitive* primitive, GameTimer& gt, TSceneRender* sceneRender) override;
+	virtual void UpdateMaterialCB(Primitive* primitive) override;
 	virtual void UpdateShadowPass(TSceneRender* sceneRender) override;
 	
 	virtual void SetRenderTarget(TRenderTarget* renderTarget) override;
@@ -196,7 +199,7 @@ private:
 	POINT mLastMousePos;
 
 	int mLastElementCount = 0;
-	int mCurrentElementCount = 0;
+	int mCurrentElementCount = 20;
 
 	FMeshData* mLoadedStruct;
 

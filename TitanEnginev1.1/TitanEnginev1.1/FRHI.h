@@ -21,11 +21,15 @@ public:
 
 
 	virtual void InitRHI(Scene* scene) = 0;
+	virtual void ResetCommand() = 0;
+	virtual void ExecuteCommand() = 0;
+
+
 
 	virtual TShader* CreateShader(std::string shaderName) = 0;
 	virtual TPipeline* CreatePipelineState(TShader* shader, std::string shaderName) = 0;
 	virtual TMaterial* CreateMaterial(std::string name, TShader* shader, TTexTure* texture, int matIndex) = 0;
-	virtual void CreateMaterials() = 0;
+	
 
 	virtual void CreateCbvSrvHeap() = 0;
 	virtual StaticMesh* CreateMeshBuffer(FMeshData* meshData) = 0;
@@ -35,8 +39,8 @@ public:
 	virtual void EndDraw() = 0;
 
 	virtual void BeginFrame() = 0;
-	virtual void UpdateObjectCB(Primitive* primitive, GameTimer& gt) = 0;
-	virtual void UpdateMaterialCB() = 0;
+	virtual void UpdateObjectCB(Primitive* primitive, GameTimer& gt, TSceneRender* sceneRender) = 0;
+	virtual void UpdateMaterialCB(Primitive* primitive) = 0;
 	virtual void UpdateShadowPass(TSceneRender* sceneRender) = 0;
 
 	virtual void SetViewPortAndRects(TViewPort& viewport) = 0;
