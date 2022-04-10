@@ -94,6 +94,21 @@ float CalcShadowFactor(float4 shadowPosH)
 }
 
 
+float3 NormalSampleToWorldSpace(float3 normalMapSample, float3 unitNormalW, float3 tangentW)
+{
+    float3 normalT = 2.0f * normalMapSample - 1.0f;
+
+    float3 N = unitNormalW;
+    float3 T = normalize(tangentW - dot(tangentW, N) * N);
+    float3 B = cross(N, T);
+
+    float3x3 TBN = float3x3(T, B, N);
+
+    float3 bumpedNormalW = mul(normalT, TBN);
+
+    return bumpedNormalW;
+}
+
 struct VertexIn
 {
 	float3 PosL  : POSITION;
@@ -109,8 +124,9 @@ struct VertexOut
     float4 ShadowPosH : POSITION0;
     float3 PosW : POSITION1;
     float4 Color : COLOR;
-	float4 Normal: NORMAL;
-    float4 TangentX : TANGENTX;
+	float3 Normal: NORMAL;
+    float3 TangentX : TANGENTX;
+
 	float2 Texcoord : TEXCOORD;
 };
 
@@ -125,12 +141,13 @@ VertexOut VS(VertexIn vin)
     vout.PosW = PosW.xyz;
 	vout.PosH = mul(PosW, gViewProj);
 
-    vout.TangentX = vin.TangentX;
+
 	vout.Texcoord = vin.Texcoord;
 	vout.Color = vin.Color;
-	vout.Normal = mul(gRotation, vin.Normal);
-   // vout.Normal = mul(vout.Normal, gWorld);
 
+	//vout.Normal = mul(gRotation, vin.Normal);
+    vout.Normal = mul(vin.Normal.xyz, (float3x3)gWorld);
+    vout.TangentX = mul(vin.TangentX.xyz, (float3x3)gWorld);
 	vout.ShadowPosH = mul(PosW, gLightTVP);
 
     return vout;
@@ -139,7 +156,7 @@ VertexOut VS(VertexIn vin)
 float4 PS(VertexOut pin) : SV_Target
 {
 	float4 diffuseAlbedo = gDiffuseMap.Sample(gsamAnisotropicWrap, pin.Texcoord);
-    float4 normalMap = gNormalMap.Sample(gsamAnisotropicWrap, gNormalMap);
+    float4 normalMap = gNormalMap.Sample(gsamAnisotropicWrap, pin.Texcoord);
 
 
 	//float4 ambient = diffuseAlbedo;
@@ -147,14 +164,18 @@ float4 PS(VertexOut pin) : SV_Target
     float shadowFactor = CalcShadowFactor(pin.ShadowPosH);
     float3 toEyeW = normalize(Cameraloc - pin.PosW);
     //pin.Normal = normalize(pin.Normal);
+    pin.TangentX = normalize(pin.TangentX);
+
+
     const float shininess = 1.0f - gRoughness;
 
+    float3 bumpedNormalMap = NormalSampleToWorldSpace(normalMap, pin.Normal, pin.TangentX);
 
-    float3 Fr0 = {0.31f, 0.31f, 0.31f};
+    float3 Fr0 = {0.5f, 0.5f, 0.5f};
 
     Material mat = { diffuseAlbedo, Fr0, shininess };
-
-    float4 directionLight = ComputeLighting(gLight, mat, float3(normalMap), toEyeW, shadowFactor);
+    //
+    float4 directionLight = ComputeLighting(gLight, mat, bumpedNormalMap, toEyeW, shadowFactor);
 
     float4 ambient = 0.1 * diffuseAlbedo;
 
@@ -164,7 +185,7 @@ float4 PS(VertexOut pin) : SV_Target
     float4 litColor = ambient + directionLight;
     //litColor.a = gDiffuseAlbedo.a;
 
-	pin.Color = pow((pin.Normal * 0.5f + 0.5f), 1/2.2f);
+    pin.Color = pow(float4((pin.Normal * 0.5f + 0.5f), 1.0f), 1 / 2.2f);
 
     return pow(litColor, 1/2.2f);
   	//return ambient * (shadowFactor + 0.1);
