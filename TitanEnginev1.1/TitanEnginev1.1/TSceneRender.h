@@ -9,11 +9,7 @@ class TSceneRender
 {
 public:
 	TSceneRender(){}
-	~TSceneRender(){}
-
-
-
-
+	~TSceneRender();
 
 public:
 	std::unordered_map<std::string, TLight*> LightMap;

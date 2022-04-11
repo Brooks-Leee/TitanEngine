@@ -12,6 +12,12 @@ Scene::Scene()
 
 Scene::~Scene()
 {
-	delete light;
-	light = nullptr;
+
+	for (auto& actor : SceneDataArr)
+	{
+		if (actor != nullptr)
+		{
+			delete actor;
+		}
+	}
 }

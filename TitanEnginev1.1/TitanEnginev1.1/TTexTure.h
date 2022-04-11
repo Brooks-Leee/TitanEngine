@@ -4,6 +4,9 @@ class TTexTure :
     public TResource
 {
 public:
+	TTexTure(){}
+	virtual ~TTexTure(){}
+
 	std::string Name;
 	std::wstring Filename;
 };

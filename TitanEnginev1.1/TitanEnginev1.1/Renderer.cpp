@@ -18,6 +18,16 @@ Renderer::~Renderer()
 {
 	delete sceneRender;
 	sceneRender = nullptr;
+
+	for (auto& mesh: MeshBufferMap)
+	{	
+		delete mesh.second;
+	}
+
+	for (auto& rendertarget : RenderTargetMap)
+	{
+		delete rendertarget.second;
+	}
 }
 
 void Renderer::Init()
@@ -59,7 +69,7 @@ void Renderer::BeginRender()
 
 	for (auto actor : Primitives)
 	{
-		actor->MeshBuffer = std::move(MeshBufferMap[actor->AssetPath]);
+		actor->MeshBuffer = MeshBufferMap[actor->AssetPath];
 		actor->Material = sceneRender->MaterialMap["brick"];
 	}
 

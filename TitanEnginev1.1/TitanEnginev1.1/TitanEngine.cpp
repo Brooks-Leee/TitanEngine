@@ -16,8 +16,6 @@ TitanEngine::TitanEngine()
 
 TitanEngine::~TitanEngine()
 {
-	delete SceneIns;
-	SceneIns = nullptr;
 }
 
 bool TitanEngine::Init()
@@ -53,6 +51,8 @@ void TitanEngine::Destroy()
 	WindowIns = nullptr;
 	delete RendererIns;
 	RendererIns = nullptr;
+	delete SceneIns;
+	SceneIns = nullptr;
 }
 
 void TitanEngine::RenderTick()

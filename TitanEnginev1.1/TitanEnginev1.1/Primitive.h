@@ -7,6 +7,12 @@
 class Primitive
 {
 public:
+	Primitive();
+	~Primitive();
+
+
+
+public:
 	FTransform Transform;
 	std::string AssetPath;
 	UINT PrimitiveMVPIndex;

@@ -214,7 +214,6 @@ void FRHIDX12::CreateCbvSrvHeap()
 	Geo->DrawArgs[meshData->AssetPath] = submesh;
 
 	Geo->StaticMeshInfo.AssetPath = meshData->AssetPath;
-
 	//mCurrentElementCount++;
 	return Geo;
 }

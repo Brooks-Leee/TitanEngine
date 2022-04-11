@@ -29,6 +29,10 @@ struct FMeshData
 class StaticMesh : public TResource
 {
 public:
+	StaticMesh(){}
+	virtual ~StaticMesh(){}
+
+public:
 	FMeshData* GetStaticMesh();
 
 public:

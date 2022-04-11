@@ -2,10 +2,8 @@
 #include "TRHIResource.h"
 #include "TTexTure.h"
 
-class TRHITexture :
-    public TRHIResource, public TTexTure
+class TRHITexture : public TTexTure
 {
-    virtual void g();
-
+    
 };
 
