@@ -556,7 +556,8 @@ void FRHIDX12::UpdateObjectCB(Primitive* actor, GameTimer& gt, TSceneRender* sce
 	auto& l = t.location;
 
 	auto scale = glm::scale(MathHelper::Identity4x4glm(), glm::vec3(s.x, s.y, s.z));
-	auto rotation = glm::transpose(glm::mat4_cast(glm::quat(r.w, r.pitch, r.yaw, r.roll)));
+	//auto rotation = glm::transpose(glm::mat4_cast(glm::quat(r.w, r.pitch, r.yaw, r.roll)));
+	auto rotation = glm::mat4_cast(glm::quat(r.w, r.pitch, r.yaw, r.roll));
 	auto location = glm::translate(MathHelper::Identity4x4glm(), glm::vec3(l.x, l.y, l.z));
 
 

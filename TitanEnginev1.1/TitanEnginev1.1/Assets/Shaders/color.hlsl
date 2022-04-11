@@ -156,14 +156,13 @@ VertexOut VS(VertexIn vin)
 float4 PS(VertexOut pin) : SV_Target
 {
 	float4 diffuseAlbedo = gDiffuseMap.Sample(gsamAnisotropicWrap, pin.Texcoord);
-    float4 normalMap = gNormalMap.Sample(gsamAnisotropicWrap, pin.Texcoord);
+    float3 normalMap = gNormalMap.Sample(gsamAnisotropicWrap, pin.Texcoord);
 
-
-	//float4 ambient = diffuseAlbedo;
-  //	float shadowFactor = CalcShadow(pin.ShadowPosH);
     float shadowFactor = CalcShadowFactor(pin.ShadowPosH);
     float3 toEyeW = normalize(Cameraloc - pin.PosW);
-    //pin.Normal = normalize(pin.Normal);
+
+    // need to normalize our normal and tangent ater we transform them to world space
+    pin.Normal = normalize(pin.Normal);
     pin.TangentX = normalize(pin.TangentX);
 
 
@@ -182,11 +181,11 @@ float4 PS(VertexOut pin) : SV_Target
 	// normal color
 	float4 test = mul(diffuseAlbedo, gDiffuseAlbedo);
    
-    float4 litColor = ambient + directionLight;
     //litColor.a = gDiffuseAlbedo.a;
 
     pin.Color = pow(float4((pin.Normal * 0.5f + 0.5f), 1.0f), 1 / 2.2f);
 
+    float4 litColor = ambient + directionLight;
     return pow(litColor, 1/2.2f);
   	//return ambient * (shadowFactor + 0.1);
     //return pin.Color * (shadowFactor + 0.1);
