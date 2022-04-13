@@ -34,6 +34,9 @@ inline std::wstring AnsiToWString(const std::string& str)
     return std::wstring(buffer);
 }
 
+
+
+
 /*
 #if defined(_DEBUG)
     #ifndef Assert
@@ -69,6 +72,9 @@ public:
     static bool IsKeyDown(int vkeyCode);
 
     static std::string ToString(HRESULT hr);
+
+	static std::string WSToS(const std::wstring& wstr);
+	static std::wstring SToWS(const std::string& str);
 
     static UINT CalcConstantBufferByteSize(UINT byteSize)
     {

@@ -9,8 +9,6 @@ public:
 	TRenderTargetDX12(){};
 	~TRenderTargetDX12(){};
 
-	unsigned __int64 CurrentBackBufferView();
-	unsigned __int64 DepthStencilBuffer();
 
 	CD3DX12_GPU_DESCRIPTOR_HANDLE SRV();
 	CD3DX12_CPU_DESCRIPTOR_HANDLE DSV();
@@ -24,6 +22,8 @@ public:
 
 	static const int SwapChainBufferCount = 2;
 	int mCurrBackBuffer = 0;
+	int mRTVindex = 0;
+	bool isShadowMap = false;
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> mSwapChainBuffer[SwapChainBufferCount];
 	Microsoft::WRL::ComPtr<ID3D12Resource> mDepthStencilBuffer;

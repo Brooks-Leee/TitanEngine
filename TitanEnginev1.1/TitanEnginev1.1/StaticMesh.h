@@ -11,6 +11,11 @@ struct Vertex
 	glm::vec2 Texcoord;
 };
 
+struct VertexPos
+{
+	glm::vec3 Pos;
+};
+
 struct FMeshData
 {
 	int32_t VerticesNum;

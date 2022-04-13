@@ -7,9 +7,6 @@ Primitive::Primitive()
 
 Primitive::~Primitive()
 {
-	if (MeshBuffer != nullptr)
-	{
-		//delete MeshBuffer;
-	}
+	
 
 }

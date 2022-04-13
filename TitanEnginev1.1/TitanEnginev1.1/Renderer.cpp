@@ -47,6 +47,7 @@ void Renderer::BeginRender()
 	sceneRender->ShaderMap["shadow"] = RHI->CreateShader("shadow");
 	sceneRender->PipelineMap["opaque"] = RHI->CreatePipelineState(sceneRender->ShaderMap["color"], "color");
 	sceneRender->PipelineMap["shadow_opaque"] = RHI->CreatePipelineState(sceneRender->ShaderMap["shadow"], "shadow");
+	sceneRender->PipelineMap["hdr"] = RHI->CreatePipelineState(sceneRender->ShaderMap["color"], "hdr");
 
 	RHI->BeginFrame();
 	// need to create mesh first, cuz we will count the mesh buff index and followed by texture
@@ -75,6 +76,7 @@ void Renderer::BeginRender()
 
 	RenderTargetMap["ShadowMap"] = RHI->CreateRenderTarget(DEPTHSTENCIL_BUFFER, 2048, 2048);
 	RenderTargetMap["Base"] = RHI->CreateRenderTarget(COMMAND_RENDER_BUFFER, 800, 600);
+	RenderTargetMap["hdr"] = RHI->CreateRenderTarget(HDR_RENDER_BUFFER, 800, 600);
 	RHI->CreateConstantBuffer();
 	RHI->ExecuteCommand();
 
@@ -133,6 +135,9 @@ void Renderer::Run()
 	BuildLight();
 
 	RHI->BeginFrame();
+
+
+
 	// Shadow Pass
 	RHI->SetViewPortAndRects(ShadowViewPort);
 	RHI->SetRenderTarget(RenderTargetMap["ShadowMap"]);
@@ -149,6 +154,30 @@ void Renderer::Run()
 		RHI->DrawMesh(primitive);
 	}
 	RHI->ChangeResourceState(RenderTargetMap["ShadowMap"], RESOURCE_STATE_DEPTH_WRITE, RESOURCE_STATE_GENERIC_READ);
+
+
+
+	// HDR Pass
+
+	TViewPort HDRViewPort;
+	RHI->SetViewPortAndRects(HDRViewPort);
+	RHI->SetRenderTarget(RenderTargetMap["hdr"]);
+	RHI->SetPipelineState(sceneRender->PipelineMap["hdr"]);
+
+	for (auto primitive : Primivitives)
+	{
+		RHI->UpdateObjectCB(primitive, TitanEngine::Get()->GetTimer(), sceneRender);
+		RHI->UpdateMaterialCB(primitive);
+		RHI->UpdateShadowPass(sceneRender);
+		RHI->SetMeshBuffer(primitive);
+		RHI->SetPrimitiveTopology(PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		RHI->SetShaderData(primitive, RenderTargetMap["hdr"]);
+		RHI->DrawMesh(primitive);
+	}
+
+	RHI->ChangeResourceState(RenderTargetMap["hdr"], RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_GENERIC_READ);
+	
+
 
 	// Main Pass
 	TViewPort MainViewPort;

@@ -43,7 +43,10 @@ cbuffer cbShadowPass : register(b3)
 	float4x4 gLightTVP;
 }
 
-
+float Luminance(float3 InColor)
+{
+	return dot(InColor, float3(0.3f, 0.59f, 0.11f));
+}
 
 float CalcShadow(float4 shadowPosH)
 {
@@ -166,11 +169,12 @@ float4 PS(VertexOut pin) : SV_Target
     pin.TangentX = normalize(pin.TangentX);
 
 
-    const float shininess = 1.0f - gRoughness;
+   // const float shininess = 1.0f - gRoughness;
+    const float shininess = 0.7f;
 
     float3 bumpedNormalMap = NormalSampleToWorldSpace(normalMap, pin.Normal, pin.TangentX);
 
-    float3 Fr0 = {0.5f, 0.5f, 0.5f};
+    float3 Fr0 = {0.7f, 0.6f, 0.7f};
 
     Material mat = { diffuseAlbedo, Fr0, shininess };
     //
@@ -185,8 +189,25 @@ float4 PS(VertexOut pin) : SV_Target
 
     pin.Color = pow(float4((pin.Normal * 0.5f + 0.5f), 1.0f), 1 / 2.2f);
 
-    float4 litColor = ambient + directionLight;
-    return pow(litColor, 1/2.2f);
+    float4 litColor = ambient + directionLight * 2 ;
+    float4 outColor = pow(litColor, 1/2.2f);
+
+    // if(outColor.x < 1.0f || outColor.y < 1.0f || outColor.z < 1.0f)
+    // {
+    //     outColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
+    // }
+
+    
+	// float BloomLuminance = Luminance(outColor.xyz) - 1.0f;
+	// float Amount = saturate(BloomLuminance * 0.5f);
+
+	// float4 OutColor;
+	// OutColor.rgb = outColor.rgb;
+	// OutColor.rgb *= Amount;
+	// OutColor.a = 0.0f;
+
+    return outColor;
+    //return pow(litColor, 1/2.2f);
   	//return ambient * (shadowFactor + 0.1);
     //return pin.Color * (shadowFactor + 0.1);
 	//return test;

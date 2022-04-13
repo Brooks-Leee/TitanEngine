@@ -9,27 +9,6 @@ cbuffer cbPerObject : register(b0)
 	float1 gTime;
 };
 
-Texture2D gDiffuseMap : register(t0);
-//Texture2D gNormal : register(t1);
-
-float3 Cameraloc : register(b1);
-
-SamplerState gsamPointWrap        : register(s0);
-SamplerState gsamPointClamp       : register(s1);
-SamplerState gsamLinearWrap       : register(s2);
-SamplerState gsamLinearClamp      : register(s3);
-SamplerState gsamAnisotropicWrap  : register(s4);
-SamplerState gsamAnisotropicClamp : register(s5);
-SamplerComparisonState gsamShadow : register(s6);
-
-
-cbuffer cbMaterial : register(b2)
-{
-	float4   gDiffuseAlbedo;
-    float3   gFresnelR0;
-    float    gRoughness;
-}
-
 cbuffer cbShadowPass : register(b3)
 {
 	float4x4 gLightViewProj;
