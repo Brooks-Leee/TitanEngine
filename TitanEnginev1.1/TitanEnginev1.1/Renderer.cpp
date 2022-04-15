@@ -5,6 +5,8 @@
 #include "GPUResourceManager.h"
 #include "GameTimer.h"
 #include "TRenderTargetDX12.h"
+#include <pix.h>
+
 
 Renderer::Renderer()
 {
@@ -168,120 +170,17 @@ void Renderer::Run()
 	ShadowPass();
 	HDRPass();
 
-	// extract hightlight
-	TViewPort HDRViewPort;
-	RHI->SetViewPortAndRects(HDRViewPort);
-	RHI->SetRenderTargetbloom(RenderTargetMap["bloomsetup"]);
-	RHI->SetPipelineState(sceneRender->PipelineMap["bloomsetup"]);
+	ExtractHightlightPass();
+	BloomDownL1Pass();
+	BloomDownL2Pass();
+	BloomDownL3Pass();
+	BloomUpL1Pass();
+	BloomUpL2Pass();
 
-	auto triangle = new Primitive();
-	triangle->MeshBuffer = MeshBufferMap["triangle.titan"];
-	triangle->AssetPath = "triangle.titan";
-	RHI->SetMeshBuffer(triangle);
-	RHI->SetPrimitiveTopology(PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	RHI->SetShaderDatabloom(RenderTargetMap["hdr"], nullptr);
+	BloomMergePass();
+	ToneMapPass();
 
-	RHI->DrawMesh(triangle);
-	RHI->ChangeResourceState(RenderTargetMap["bloomsetup"], RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_GENERIC_READ);
 
-	// bloom down L1 
-	TViewPort bd1ViewPort;
-	RHI->SetViewPortAndRects(bd1ViewPort);
-	RHI->SetRenderTargetbloom(RenderTargetMap["bloomdownL1"]);
-	RHI->SetPipelineState(sceneRender->PipelineMap["bloomdown"]);
-
-	RHI->SetMeshBuffer(triangle);
-	RHI->SetPrimitiveTopology(PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	RHI->SetShaderDatabloom(RenderTargetMap["bloomsetup"], nullptr);
-
-	RHI->DrawMesh(triangle);
-	RHI->ChangeResourceState(RenderTargetMap["bloomdownL1"], RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_GENERIC_READ);
-
-	// bloom down L2
-	RHI->SetViewPortAndRects(bd1ViewPort);
-	RHI->SetRenderTargetbloom(RenderTargetMap["bloomdownL2"]);
-	RHI->SetPipelineState(sceneRender->PipelineMap["bloomdown"]);
-
-	RHI->SetMeshBuffer(triangle);
-	RHI->SetPrimitiveTopology(PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	RHI->SetShaderDatabloom(RenderTargetMap["bloomdownL1"], nullptr);
-
-	RHI->DrawMesh(triangle);
-	RHI->ChangeResourceState(RenderTargetMap["bloomdownL2"], RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_GENERIC_READ);
-
-	// bloom down L3
-	RHI->SetViewPortAndRects(bd1ViewPort);
-	RHI->SetRenderTargetbloom(RenderTargetMap["bloomdownL3"]);
-	RHI->SetPipelineState(sceneRender->PipelineMap["bloomdown"]);
-
-	RHI->SetMeshBuffer(triangle);
-	RHI->SetPrimitiveTopology(PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	RHI->SetShaderDatabloom(RenderTargetMap["bloomdownL2"], nullptr);
-
-	RHI->DrawMesh(triangle);
-	RHI->ChangeResourceState(RenderTargetMap["bloomdownL3"], RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_GENERIC_READ);
-
-	// bloom down L4
-	//RHI->SetViewPortAndRects(bd1ViewPort);
-	//RHI->SetRenderTargetbloom(RenderTargetMap["bloomdownL4"]);
-	//RHI->SetPipelineState(sceneRender->PipelineMap["bloomdown"]);
-
-	//RHI->SetMeshBuffer(triangle);
-	//RHI->SetPrimitiveTopology(PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	//RHI->SetShaderDatabloom(RenderTargetMap["bloomdownL3"], nullptr);
-
-	//RHI->DrawMesh(triangle);
-	//RHI->ChangeResourceState(RenderTargetMap["bloomdownL4"], RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_GENERIC_READ);
-
-	// bloom up L1
-
-	RHI->SetViewPortAndRects(bd1ViewPort);
-	RHI->SetRenderTargetbloom(RenderTargetMap["bloomupL1"]);
-	RHI->SetPipelineState(sceneRender->PipelineMap["bloomup"]);
-
-	RHI->SetMeshBuffer(triangle);
-	RHI->SetPrimitiveTopology(PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	RHI->SetShaderDatabloom(RenderTargetMap["bloomdownL3"], RenderTargetMap["bloomdownL2"]);
-
-	RHI->DrawMesh(triangle);
-	RHI->ChangeResourceState(RenderTargetMap["bloomupL1"], RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_GENERIC_READ);
-
-	// bloom up L2
-
-	RHI->SetViewPortAndRects(bd1ViewPort);
-	RHI->SetRenderTargetbloom(RenderTargetMap["bloomupL2"]);
-	RHI->SetPipelineState(sceneRender->PipelineMap["bloomup"]);
-
-	RHI->SetMeshBuffer(triangle);
-	RHI->SetPrimitiveTopology(PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	RHI->SetShaderDatabloom(RenderTargetMap["bloomupL1"], RenderTargetMap["bloomdownL1"]);
-
-	RHI->DrawMesh(triangle);
-	RHI->ChangeResourceState(RenderTargetMap["bloomupL2"], RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_GENERIC_READ);
-
-	// bloom merge
-	RHI->SetViewPortAndRects(bd1ViewPort);
-	RHI->SetRenderTargetbloom(RenderTargetMap["bloommerge"]);
-	RHI->SetPipelineState(sceneRender->PipelineMap["bloommerge"]);
-
-	RHI->SetMeshBuffer(triangle);
-	RHI->SetPrimitiveTopology(PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	RHI->SetShaderDatabloom(RenderTargetMap["bloomupL2"], RenderTargetMap["bloomsetup"]);
-
-	RHI->DrawMesh(triangle);
-	RHI->ChangeResourceState(RenderTargetMap["bloommerge"], RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_GENERIC_READ);
-
-	// tone mapping
-	RHI->SetViewPortAndRects(bd1ViewPort);
-	RHI->SetRenderTargetbloom(RenderTargetMap["tonemapping"]);
-	RHI->SetPipelineState(sceneRender->PipelineMap["tonemapping"]);
-
-	RHI->SetMeshBuffer(triangle);
-	RHI->SetPrimitiveTopology(PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	RHI->SetShaderDatabloom(RenderTargetMap["hdr"], RenderTargetMap["bloommerge"]);
-
-	RHI->DrawMesh(triangle);
-	RHI->ChangeResourceState(RenderTargetMap["tonemapping"], RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_GENERIC_READ);
 
 
 
@@ -365,6 +264,131 @@ void Renderer::HDRPass()
 
 void Renderer::ExtractHightlightPass()
 {
+	// extract hightlight
+	TViewPort HDRViewPort;
+	RHI->SetViewPortAndRects(HDRViewPort);
+	RHI->SetRenderTargetbloom(RenderTargetMap["bloomsetup"], "extract hightlight");
+	RHI->SetPipelineState(sceneRender->PipelineMap["bloomsetup"]);
+
+
+	triangle->MeshBuffer = MeshBufferMap["triangle.titan"];
+	triangle->AssetPath = "triangle.titan";
+	RHI->SetMeshBuffer(triangle);
+	RHI->SetPrimitiveTopology(PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	RHI->SetShaderDatabloom(RenderTargetMap["hdr"], nullptr);
+
+	RHI->DrawMesh(triangle);
+	RHI->ChangeResourceState(RenderTargetMap["bloomsetup"], RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_GENERIC_READ);
+}
+
+void Renderer::BloomDownL1Pass()
+{
+	TViewPort bd1ViewPort;
+	RHI->SetViewPortAndRects(bd1ViewPort);
+	RHI->SetRenderTargetbloom(RenderTargetMap["bloomdownL1"], "bloomdown");
+	RHI->SetPipelineState(sceneRender->PipelineMap["bloomdown"]);
+
+	RHI->SetMeshBuffer(triangle);
+	RHI->SetPrimitiveTopology(PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	RHI->SetShaderDatabloom(RenderTargetMap["bloomsetup"], nullptr);
+
+	RHI->DrawMesh(triangle);
+	RHI->ChangeResourceState(RenderTargetMap["bloomdownL1"], RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_GENERIC_READ);
+}
+
+void Renderer::BloomDownL2Pass()
+{
+	TViewPort bd1ViewPort;
+	RHI->SetViewPortAndRects(bd1ViewPort);
+	RHI->SetRenderTargetbloom(RenderTargetMap["bloomdownL2"], "bloomdown");
+	RHI->SetPipelineState(sceneRender->PipelineMap["bloomdown"]);
+
+	RHI->SetMeshBuffer(triangle);
+	RHI->SetPrimitiveTopology(PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	RHI->SetShaderDatabloom(RenderTargetMap["bloomdownL1"], nullptr);
+
+	RHI->DrawMesh(triangle);
+	RHI->ChangeResourceState(RenderTargetMap["bloomdownL2"], RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_GENERIC_READ);
+}
+
+void Renderer::BloomDownL3Pass()
+{
+	TViewPort bd1ViewPort;
+	RHI->SetViewPortAndRects(bd1ViewPort);
+	RHI->SetRenderTargetbloom(RenderTargetMap["bloomdownL3"], "bloomdown");
+	RHI->SetPipelineState(sceneRender->PipelineMap["bloomdown"]);
+
+	RHI->SetMeshBuffer(triangle);
+	RHI->SetPrimitiveTopology(PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	RHI->SetShaderDatabloom(RenderTargetMap["bloomdownL2"], nullptr);
+
+	RHI->DrawMesh(triangle);
+	RHI->ChangeResourceState(RenderTargetMap["bloomdownL3"], RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_GENERIC_READ);
+
+}
+
+void Renderer::BloomUpL1Pass()
+{
+	TViewPort bd1ViewPort;
+
+	RHI->SetViewPortAndRects(bd1ViewPort);
+	RHI->SetRenderTargetbloom(RenderTargetMap["bloomupL1"], "bloomup");
+	RHI->SetPipelineState(sceneRender->PipelineMap["bloomup"]);
+
+	RHI->SetMeshBuffer(triangle);
+	RHI->SetPrimitiveTopology(PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	RHI->SetShaderDatabloom(RenderTargetMap["bloomdownL3"], RenderTargetMap["bloomdownL2"]);
+
+	RHI->DrawMesh(triangle);
+	RHI->ChangeResourceState(RenderTargetMap["bloomupL1"], RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_GENERIC_READ);
+}
+
+void Renderer::BloomUpL2Pass()
+{
+	TViewPort bd1ViewPort;
+
+	RHI->SetViewPortAndRects(bd1ViewPort);
+	RHI->SetRenderTargetbloom(RenderTargetMap["bloomupL2"], "bloomup");
+	RHI->SetPipelineState(sceneRender->PipelineMap["bloomup"]);
+
+	RHI->SetMeshBuffer(triangle);
+	RHI->SetPrimitiveTopology(PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	RHI->SetShaderDatabloom(RenderTargetMap["bloomupL1"], RenderTargetMap["bloomdownL1"]);
+
+	RHI->DrawMesh(triangle);
+	RHI->ChangeResourceState(RenderTargetMap["bloomupL2"], RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_GENERIC_READ);
+}
+
+void Renderer::BloomMergePass()
+{
+	TViewPort bd1ViewPort;
+
+	RHI->SetViewPortAndRects(bd1ViewPort);
+	RHI->SetRenderTargetbloom(RenderTargetMap["bloommerge"], "bloom merge");
+	RHI->SetPipelineState(sceneRender->PipelineMap["bloommerge"]);
+
+	RHI->SetMeshBuffer(triangle);
+	RHI->SetPrimitiveTopology(PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	RHI->SetShaderDatabloom(RenderTargetMap["bloomupL2"], RenderTargetMap["bloomsetup"]);
+
+	RHI->DrawMesh(triangle);
+	RHI->ChangeResourceState(RenderTargetMap["bloommerge"], RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_GENERIC_READ);
+}
+
+void Renderer::ToneMapPass()
+{
+	TViewPort bd1ViewPort;
+
+	RHI->SetViewPortAndRects(bd1ViewPort);
+	RHI->SetRenderTargetbloom(RenderTargetMap["tonemapping"], "tone mapping");
+	RHI->SetPipelineState(sceneRender->PipelineMap["tonemapping"]);
+
+	RHI->SetMeshBuffer(triangle);
+	RHI->SetPrimitiveTopology(PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	RHI->SetShaderDatabloom(RenderTargetMap["hdr"], RenderTargetMap["bloommerge"]);
+
+	RHI->DrawMesh(triangle);
+	RHI->ChangeResourceState(RenderTargetMap["tonemapping"], RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_GENERIC_READ);
 }
 
 

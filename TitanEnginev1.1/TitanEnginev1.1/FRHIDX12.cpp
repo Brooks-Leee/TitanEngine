@@ -6,6 +6,7 @@
 #include "TLight.h"
 #include "ShadowMapDX12.h"
 
+
 FRHIDX12* FRHIDX12::mFRHIDX12 = nullptr;
 
 
@@ -709,6 +710,7 @@ void FRHIDX12::SetMeshBuffer(Primitive* actor)
 
 void FRHIDX12::DrawMesh(Primitive* actor)
 {
+	
 	TMeshBufferDX12* DXMeshBuffer = static_cast<TMeshBufferDX12*>(actor->MeshBuffer);
 	mCommandList->DrawIndexedInstanced(DXMeshBuffer->DrawArgs[DXMeshBuffer->Name].IndexCount, 1, 0, 0, 0);
 }
@@ -774,6 +776,7 @@ void FRHIDX12::ChangeResourceState(TRenderTarget* renderTarget, RESOURCE_STATE s
 		mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(renderTargetDx->mSwapChainBuffer[renderTargetDx->mCurrBackBuffer].Get(), stateBeforeDX, stateAfterDX));
 	}
 
+	PIXEndEvent(mCommandList.Get());
 }
 
 
@@ -854,10 +857,13 @@ void FRHIDX12::UpdateShadowPass(TSceneRender* sceneRender)
 }
 
 
-void FRHIDX12::SetRenderTargetbloom(TRenderTarget* rendertarget)
+void FRHIDX12::SetRenderTargetbloom(TRenderTarget* rendertarget, std::string event)
 {
-	TRenderTargetDX12* renderTargetDx = static_cast<TRenderTargetDX12*>(rendertarget);
+	
+	
+	PIXBeginEvent(mCommandList.Get(), 0, event.c_str());
 
+	TRenderTargetDX12* renderTargetDx = static_cast<TRenderTargetDX12*>(rendertarget);
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(renderTargetDx->mRenderTargetBuffer.Get(),
 		D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET));
 	float rtvColor[4] = { 1.0f, 0.9f, 0.8f, 1.0f };
@@ -873,6 +879,7 @@ void FRHIDX12::SetRenderTargetbloom(TRenderTarget* rendertarget)
 
 void FRHIDX12::SetRenderTarget(TRenderTarget* renderTarget)
 {
+
 	TRenderTargetDX12* renderTargetDx = static_cast<TRenderTargetDX12*>(renderTarget);
 	
 	if (renderTargetDx->mRTVindex == 2)

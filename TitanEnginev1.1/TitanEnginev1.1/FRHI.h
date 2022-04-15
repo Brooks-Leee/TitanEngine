@@ -10,6 +10,7 @@
 #include "TSceneRender.h"
 #include "TShader.h"
 #include "TPipeline.h"
+#include <pix.h>
 
 class FRHI
 {
@@ -18,7 +19,7 @@ public:
 	static void CreateRHI();
 	static void DestoryRHI();
 	 
-
+	
 
 	virtual void InitRHI(Scene* scene) = 0;
 	virtual void ResetCommand() = 0;
@@ -28,7 +29,7 @@ public:
 	virtual TRenderTarget* CreateRenderTarget(RENDERBUFFER_TYPE RTType, int Width, int Height) = 0;
 
 
-	virtual void SetRenderTargetbloom(TRenderTarget* rendertarget) = 0;
+	virtual void SetRenderTargetbloom(TRenderTarget* rendertarget, std::string event) = 0;
 	virtual void SetShaderDatabloom(TRenderTarget* rt1, TRenderTarget* rt2) = 0;
 
 

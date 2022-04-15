@@ -47,7 +47,7 @@ public:
 	virtual TRenderTarget* CreateRenderTarget(RENDERBUFFER_TYPE RTType, int rtvIndex, int srvIndex, int dsvIndex, int Width, int Height) override;
 	virtual TRenderTarget* CreateRenderTarget(RENDERBUFFER_TYPE RTType, int Width, int Height) override;
 
-	virtual void SetRenderTargetbloom(TRenderTarget* rendertarget) override;
+	virtual void SetRenderTargetbloom(TRenderTarget* rendertarget, std::string event) override;
 	virtual void SetShaderDatabloom(TRenderTarget* rt1, TRenderTarget* rt2);
 
 
