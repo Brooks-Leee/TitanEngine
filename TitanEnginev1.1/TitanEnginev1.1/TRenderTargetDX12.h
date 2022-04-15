@@ -20,6 +20,8 @@ public:
 	CD3DX12_GPU_DESCRIPTOR_HANDLE mGpuSrv;
 	CD3DX12_CPU_DESCRIPTOR_HANDLE mCpuDsv;
 
+	CD3DX12_CPU_DESCRIPTOR_HANDLE mCpuRtv;
+
 	static const int SwapChainBufferCount = 2;
 	int mCurrBackBuffer = 0;
 	int mRTVindex = 0;
@@ -27,5 +29,8 @@ public:
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> mSwapChainBuffer[SwapChainBufferCount];
 	Microsoft::WRL::ComPtr<ID3D12Resource> mDepthStencilBuffer;
+	Microsoft::WRL::ComPtr<ID3D12Resource> mRenderTargetBuffer;
+
+
 };
 

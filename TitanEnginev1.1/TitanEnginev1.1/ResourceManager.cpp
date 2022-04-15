@@ -55,6 +55,29 @@ void ResourceManager::LoadAllActorInMap()
 
 			}
 		}
+			/*Primitive* actor = new Primitive();
+			actor->PrimitiveMVPIndex = ArrLen;
+			actor->AssetPath = "triangle.titan";
+			scene->SceneDataArr.push_back(actor);*/
+
+		StaticMesh* triangle = new StaticMesh;
+		triangle->StaticMeshInfo.VerticesNum = 3;
+		triangle->StaticMeshInfo.TriangleNum = 1;
+		triangle->StaticMeshInfo.IndicesNum = 3;
+		triangle->StaticMeshInfo.AssetPath = "triangle.titan";
+		triangle->StaticMeshInfo.Vertices = {
+												{-1, 1, 0},
+												{-1, -3, 0},
+												{3, 1, 0}
+											};
+		triangle->StaticMeshInfo.indices = {0, 1, 2};
+
+		FMeshData* meshData = triangle->GetStaticMesh();
+
+		mAllMeshData.insert(std::pair<std::string, FMeshData*>("triangle.titan", meshData));
+
+
+
 	}
 }
 

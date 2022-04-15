@@ -6,5 +6,10 @@ class TRenderTarget :
 public:
     TRenderTarget(){};
     virtual ~TRenderTarget(){};
+
+
+public:
+    int mWidth;
+    int mHeight;
 };
 

@@ -44,16 +44,22 @@ public:
 	virtual void ResetCommand() override;
 	virtual void ExecuteCommand() override;
 
+	virtual TRenderTarget* CreateRenderTarget(RENDERBUFFER_TYPE RTType, int rtvIndex, int srvIndex, int dsvIndex, int Width, int Height) override;
+	virtual TRenderTarget* CreateRenderTarget(RENDERBUFFER_TYPE RTType, int Width, int Height) override;
+
+	virtual void SetRenderTargetbloom(TRenderTarget* rendertarget) override;
+	virtual void SetShaderDatabloom(TRenderTarget* rt1, TRenderTarget* rt2);
+
+
 
 	virtual TShader* CreateShader(std::string shaderName) override;
-	virtual TPipeline* CreatePipelineState(TShader* shader, std::string shaderName) override;
+	virtual TPipeline* CreatePipelineState(TShader* shader, std::string shaderName, TEX_FORMAT format) override;
 	virtual TMaterial* CreateMaterial(std::string name, TShader* shader, TTexTure* texture, int matIndex) override;
 	
 	virtual void CreateCbvSrvHeap() override;
 	virtual StaticMesh* CreateMeshBuffer(FMeshData* meshData) override;
 	virtual TTexTure* CreateTexture(std::shared_ptr<TTexTure> Texture, UINT index) override;
 	virtual void CreateConstantBuffer() override;
-	virtual TRenderTarget* CreateRenderTarget(RENDERBUFFER_TYPE RTType, int Width, int Height) override;
 	virtual void EndDraw() override;
 
 	virtual void BeginFrame() override;
@@ -202,6 +208,9 @@ private:
 	int mCurrentElementCount = 20;
 
 	FMeshData* mLoadedStruct;
+
+	glm::vec4 mBloomsetupSize= { 800.0f, 600.0f,800.0f, 600.0f };
+
 
 };
 

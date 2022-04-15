@@ -24,10 +24,17 @@ public:
 	virtual void ResetCommand() = 0;
 	virtual void ExecuteCommand() = 0;
 
+	virtual TRenderTarget* CreateRenderTarget(RENDERBUFFER_TYPE RTType, int rtvIndex, int srvIndex, int dsvIndex, int Width, int Height) = 0;
+	virtual TRenderTarget* CreateRenderTarget(RENDERBUFFER_TYPE RTType, int Width, int Height) = 0;
+
+
+	virtual void SetRenderTargetbloom(TRenderTarget* rendertarget) = 0;
+	virtual void SetShaderDatabloom(TRenderTarget* rt1, TRenderTarget* rt2) = 0;
+
 
 
 	virtual TShader* CreateShader(std::string shaderName) = 0;
-	virtual TPipeline* CreatePipelineState(TShader* shader, std::string shaderName) = 0;
+	virtual TPipeline* CreatePipelineState(TShader* shader, std::string shaderName, TEX_FORMAT format) = 0;
 	virtual TMaterial* CreateMaterial(std::string name, TShader* shader, TTexTure* texture, int matIndex) = 0;
 	
 
@@ -35,7 +42,6 @@ public:
 	virtual StaticMesh* CreateMeshBuffer(FMeshData* meshData) = 0;
 	virtual void CreateConstantBuffer() = 0;
 	virtual TTexTure* CreateTexture(std::shared_ptr<TTexTure> Texture, UINT index) = 0;
-	virtual TRenderTarget* CreateRenderTarget(RENDERBUFFER_TYPE RTType, int Width, int Height) = 0;
 	virtual void EndDraw() = 0;
 
 	virtual void BeginFrame() = 0;
