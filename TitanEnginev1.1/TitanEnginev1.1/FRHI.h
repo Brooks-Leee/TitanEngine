@@ -51,7 +51,7 @@ public:
 	virtual void UpdateShadowPass(TSceneRender* sceneRender) = 0;
 
 	virtual void SetViewPortAndRects(TViewPort& viewport) = 0;
-	virtual void SetRenderTarget(TRenderTarget* renderTarget) = 0;
+	virtual void SetRenderTarget(TRenderTarget* renderTarget, std::string event) = 0;
 	virtual void SetPipelineState(TPipeline* pipeline) = 0;
 	virtual void SetShaderData(Primitive* primitive, TRenderTarget* renderTarget) = 0;
 	virtual void ChangeResourceState(TRenderTarget* renderTarget, RESOURCE_STATE stateBefore, RESOURCE_STATE stateAfter) = 0;
@@ -64,6 +64,8 @@ public:
 	virtual void EndFrame(TRenderTarget* renderTarget) = 0;
 	virtual void DrawShadowMap(Primitive* primitive) = 0;
 
+
+	virtual void EndEvent() = 0;
 
 protected:
 	static FRHI* RHI;

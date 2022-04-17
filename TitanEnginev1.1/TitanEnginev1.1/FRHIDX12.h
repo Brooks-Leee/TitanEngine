@@ -67,7 +67,7 @@ public:
 	virtual void UpdateMaterialCB(Primitive* primitive) override;
 	virtual void UpdateShadowPass(TSceneRender* sceneRender) override;
 	
-	virtual void SetRenderTarget(TRenderTarget* renderTarget) override;
+	virtual void SetRenderTarget(TRenderTarget* renderTarget, std::string event) override;
 
 	virtual void SetViewPortAndRects(TViewPort& viewport) override;
 	virtual void SetPipelineState(TPipeline* pipeline) override;
@@ -84,6 +84,7 @@ public:
 	virtual void DrawShadowMap(Primitive* primitive) override;
 
 
+	virtual void EndEvent() override;
 
 public:
 	bool Initialize();

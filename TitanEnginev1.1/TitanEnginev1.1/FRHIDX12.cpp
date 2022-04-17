@@ -858,11 +858,9 @@ void FRHIDX12::UpdateShadowPass(TSceneRender* sceneRender)
 
 
 void FRHIDX12::SetRenderTargetbloom(TRenderTarget* rendertarget, std::string event)
-{
-	
-	
-	PIXBeginEvent(mCommandList.Get(), 0, event.c_str());
+{	
 
+	PIXBeginEvent(mCommandList.Get(), 0, event.c_str());
 	TRenderTargetDX12* renderTargetDx = static_cast<TRenderTargetDX12*>(rendertarget);
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(renderTargetDx->mRenderTargetBuffer.Get(),
 		D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET));
@@ -877,8 +875,11 @@ void FRHIDX12::SetRenderTargetbloom(TRenderTarget* rendertarget, std::string eve
 }
 
 
-void FRHIDX12::SetRenderTarget(TRenderTarget* renderTarget)
+void FRHIDX12::SetRenderTarget(TRenderTarget* renderTarget, std::string event)
 {
+
+	
+	PIXBeginEvent(mCommandList.Get(), 0, event.c_str());
 
 	TRenderTargetDX12* renderTargetDx = static_cast<TRenderTargetDX12*>(renderTarget);
 	
@@ -1018,6 +1019,11 @@ void FRHIDX12::DrawShadowMap(Primitive* actor)
 	mCommandList->DrawIndexedInstanced(DXMesh->DrawArgs[DXMesh->Name].IndexCount, 1, 0, 0, 0);
 
 
+}
+
+void FRHIDX12::EndEvent()
+{
+	PIXEndEvent(mCommandList.Get());
 }
 
 

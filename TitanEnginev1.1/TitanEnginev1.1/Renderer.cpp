@@ -52,6 +52,10 @@ void Renderer::BeginRender()
 	sceneRender->ShaderMap["bloomup"] = RHI->CreateShader("bloomup");
 	sceneRender->ShaderMap["bloommerge"] = RHI->CreateShader("bloommerge");
 	sceneRender->ShaderMap["tonemapping"] = RHI->CreateShader("tonemapping");
+	sceneRender->ShaderMap["outline"] = RHI->CreateShader("outline");
+
+	sceneRender->ShaderMap["ppout"] = RHI->CreateShader("ppout");
+
 
 	sceneRender->PipelineMap["opaque"] = RHI->CreatePipelineState(sceneRender->ShaderMap["color"], "color", FORMAT_R8G8B8A8_UNORM);
 	sceneRender->PipelineMap["shadow_opaque"] = RHI->CreatePipelineState(sceneRender->ShaderMap["shadow"], "shadow_opaque", FORMAT_UNKNOWN);
@@ -61,6 +65,10 @@ void Renderer::BeginRender()
 	sceneRender->PipelineMap["bloomup"] = RHI->CreatePipelineState(sceneRender->ShaderMap["bloomup"], "bloomup", FORMAT_R16G16B16A16_FLOAT);
 	sceneRender->PipelineMap["bloommerge"] = RHI->CreatePipelineState(sceneRender->ShaderMap["bloommerge"], "bloommerge", FORMAT_R16G16B16A16_FLOAT);
 	sceneRender->PipelineMap["tonemapping"] = RHI->CreatePipelineState(sceneRender->ShaderMap["tonemapping"], "tonemapping", FORMAT_R16G16B16A16_FLOAT);
+	sceneRender->PipelineMap["outline"] = RHI->CreatePipelineState(sceneRender->ShaderMap["outline"], "outline", FORMAT_R16G16B16A16_FLOAT);
+	sceneRender->PipelineMap["ppout"] = RHI->CreatePipelineState(sceneRender->ShaderMap["ppout"], "ppout", FORMAT_R16G16B16A16_FLOAT);
+
+
 
 	RHI->BeginFrame();
 	// need to create mesh first, cuz we will count the mesh buff index and followed by texture
@@ -108,6 +116,8 @@ void Renderer::BeginRender()
 	RenderTargetMap["bloomupL2"] = RHI->CreateRenderTarget(HDR_RENDER_BUFFER, 66, 66, 66, 100, 75);
 	RenderTargetMap["bloommerge"] = RHI->CreateRenderTarget(HDR_RENDER_BUFFER, 67, 67, 67, 200, 150);
 	RenderTargetMap["tonemapping"] = RHI->CreateRenderTarget(HDR_RENDER_BUFFER, 68, 68, 68, 800, 600);
+
+	RenderTargetMap["outline"] = RHI->CreateRenderTarget(HDR_RENDER_BUFFER, 69, 69, 69, 800, 600);
 
 
 	RHI->CreateConstantBuffer();
@@ -179,29 +189,9 @@ void Renderer::Run()
 
 	BloomMergePass();
 	ToneMapPass();
+	OutlinePass();
+	MainPass();
 
-
-
-
-
-	// Main Pass
-	auto Primivitives = TitanEngine::Get()->GetSceneIns()->SceneDataArr;
-	TViewPort MainViewPort;
-	RHI->SetViewPortAndRects(MainViewPort);
-	RHI->SetRenderTarget(RenderTargetMap["Base"]);
-	RHI->SetPipelineState(sceneRender->PipelineMap["opaque"]);
-
-	for (auto primitive : Primivitives)
-	{
-		RHI->UpdateObjectCB(primitive, TitanEngine::Get()->GetTimer(), sceneRender);
-		RHI->UpdateMaterialCB(primitive);
-		RHI->UpdateShadowPass(sceneRender);
-		RHI->SetMeshBuffer(primitive);
-		RHI->SetPrimitiveTopology(PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		RHI->SetShaderData(primitive, RenderTargetMap["Base"]);
-		RHI->DrawMesh(primitive);
-	}
-	RHI->ChangeResourceState(RenderTargetMap["Base"], RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PRESENT);
 	RHI->EndFrame(RenderTargetMap["Base"]);
 
 }
@@ -222,7 +212,7 @@ void Renderer::ShadowPass()
 	ShadowViewPort.Height = 2048;
 	ShadowViewPort.Width = 2048;
 	RHI->SetViewPortAndRects(ShadowViewPort);
-	RHI->SetRenderTarget(RenderTargetMap["ShadowMap"]);
+	RHI->SetRenderTarget(RenderTargetMap["ShadowMap"], "shadow pass");
 	RHI->SetPipelineState(sceneRender->PipelineMap["shadow_opaque"]);
 
 	for (auto primitive : Primivitives)
@@ -236,7 +226,7 @@ void Renderer::ShadowPass()
 		RHI->DrawMesh(primitive);
 	}
 	RHI->ChangeResourceState(RenderTargetMap["ShadowMap"], RESOURCE_STATE_DEPTH_WRITE, RESOURCE_STATE_GENERIC_READ);
-
+	RHI->EndEvent();
 }
 
 void Renderer::HDRPass()
@@ -245,7 +235,7 @@ void Renderer::HDRPass()
 
 	TViewPort HDRViewPort;
 	RHI->SetViewPortAndRects(HDRViewPort);
-	RHI->SetRenderTarget(RenderTargetMap["hdr"]);
+	RHI->SetRenderTarget(RenderTargetMap["hdr"], "hdr pass");
 	RHI->SetPipelineState(sceneRender->PipelineMap["hdr"]);
 
 	for (auto primitive : Primivitives)
@@ -260,6 +250,7 @@ void Renderer::HDRPass()
 	}
 
 	RHI->ChangeResourceState(RenderTargetMap["hdr"], RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_GENERIC_READ);
+	RHI->EndEvent();
 }
 
 void Renderer::ExtractHightlightPass()
@@ -389,6 +380,43 @@ void Renderer::ToneMapPass()
 
 	RHI->DrawMesh(triangle);
 	RHI->ChangeResourceState(RenderTargetMap["tonemapping"], RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_GENERIC_READ);
+}
+
+void Renderer::OutlinePass()
+{
+	// out line
+
+	TViewPort OLViewPort;
+	RHI->SetViewPortAndRects(OLViewPort);
+	RHI->SetRenderTargetbloom(RenderTargetMap["outline"], "outline");
+
+	RHI->SetPipelineState(sceneRender->PipelineMap["outline"]);
+
+	RHI->SetMeshBuffer(triangle);
+	RHI->SetPrimitiveTopology(PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	RHI->SetShaderDatabloom(RenderTargetMap["tonemapping"], nullptr);
+
+	RHI->DrawMesh(triangle);
+	RHI->ChangeResourceState(RenderTargetMap["outline"], RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_GENERIC_READ);
+}
+
+void Renderer::MainPass()
+{
+
+	// Main Pass
+
+	TViewPort MainViewPort;
+	RHI->SetViewPortAndRects(MainViewPort);
+	RHI->SetRenderTarget(RenderTargetMap["Base"], "final pass");
+	RHI->SetPipelineState(sceneRender->PipelineMap["ppout"]);
+
+	RHI->SetMeshBuffer(triangle);
+	RHI->SetPrimitiveTopology(PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	RHI->SetShaderDatabloom(RenderTargetMap["outline"], nullptr);
+
+	RHI->DrawMesh(triangle);
+	RHI->ChangeResourceState(RenderTargetMap["Base"], RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PRESENT);
+	RHI->EndEvent();
 }
 
 

@@ -28,8 +28,8 @@ public:
 	void BloomUpL2Pass();
 	void BloomMergePass();
 	void ToneMapPass();
-
-
+	void OutlinePass();
+	void MainPass();
 
 
 protected:
