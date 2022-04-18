@@ -162,9 +162,9 @@ float4 PS(VertexOut pin) : SV_Target
     float4 fs7 = s7 * laplacian[2][1];
     float4 fs8 = s8 * laplacian[2][2];
     float4 lapValue = fs0 + fs1 + fs2 + fs3 + fs4 + fs5 + fs6 + fs7 + fs8;
-    float4 LaplacianOut = saturate(1.8 - length(lapValue));;
+    float4 LaplacianOut = saturate(1 - length(lapValue));;
 
 
-	return SobelOut;
+	return LaplacianOut;
     //return float4(0.5f, 0.6f, 1.0f, 1.0f);
 }

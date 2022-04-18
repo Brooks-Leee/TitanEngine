@@ -44,7 +44,7 @@ public:
 	virtual void ResetCommand() override;
 	virtual void ExecuteCommand() override;
 
-	virtual TRenderTarget* CreateRenderTarget(RENDERBUFFER_TYPE RTType, int rtvIndex, int srvIndex, int dsvIndex, int Width, int Height) override;
+	virtual TRenderTarget* CreateRenderTarget(TEX_FORMAT format, int rtvIndex, int srvIndex, int dsvIndex, int Width, int Height) override;
 	virtual TRenderTarget* CreateRenderTarget(RENDERBUFFER_TYPE RTType, int Width, int Height) override;
 
 	virtual void SetRenderTargetbloom(TRenderTarget* rendertarget, std::string event) override;

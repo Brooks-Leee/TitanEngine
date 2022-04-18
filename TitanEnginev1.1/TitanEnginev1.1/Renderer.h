@@ -19,17 +19,22 @@ public:
 	void UpdateScene();
 
 	void ShadowPass();
-	void HDRPass();
+	void MainPass();
 	void ExtractHightlightPass();
 	void BloomDownL1Pass();
 	void BloomDownL2Pass();
 	void BloomDownL3Pass();
 	void BloomUpL1Pass();
 	void BloomUpL2Pass();
+
+	void BloomDown(TRenderTarget* bloomInput, TRenderTarget* RT, TPipeline* pipeline);
+	void BloomUp(TRenderTarget* bloomInput1, TRenderTarget* bloomInput2, TRenderTarget* RT, TPipeline* pipeline);
+
 	void BloomMergePass();
 	void ToneMapPass();
 	void OutlinePass();
-	void MainPass();
+	void MergeOutline();
+	void FinalPass();
 
 
 protected:

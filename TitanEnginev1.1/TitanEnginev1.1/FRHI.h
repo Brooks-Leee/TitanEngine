@@ -25,7 +25,7 @@ public:
 	virtual void ResetCommand() = 0;
 	virtual void ExecuteCommand() = 0;
 
-	virtual TRenderTarget* CreateRenderTarget(RENDERBUFFER_TYPE RTType, int rtvIndex, int srvIndex, int dsvIndex, int Width, int Height) = 0;
+	virtual TRenderTarget* CreateRenderTarget(TEX_FORMAT format, int rtvIndex, int srvIndex, int dsvIndex, int Width, int Height) = 0;
 	virtual TRenderTarget* CreateRenderTarget(RENDERBUFFER_TYPE RTType, int Width, int Height) = 0;
 
 

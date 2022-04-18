@@ -176,6 +176,8 @@ float4 PS(VertexOut pin) : SV_Target
 
     float3 Fr0 = {0.7f, 0.6f, 0.7f};
 
+
+
     Material mat = { diffuseAlbedo, Fr0, shininess };
     //
     float4 directionLight = ComputeLighting(gLight, mat, bumpedNormalMap, toEyeW, shadowFactor);
@@ -189,25 +191,15 @@ float4 PS(VertexOut pin) : SV_Target
 
     pin.Color = pow(float4((pin.Normal * 0.5f + 0.5f), 1.0f), 1 / 2.2f);
 
+    // diffuse
     float4 litColor = ambient + directionLight * 2 ;
+
+
+
     float4 outColor = pow(litColor, 1/2.2f);
 
-    // if(outColor.x < 1.0f || outColor.y < 1.0f || outColor.z < 1.0f)
-    // {
-    //     outColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
-    // }
-
-    
-	// float BloomLuminance = Luminance(outColor.xyz) - 1.0f;
-	// float Amount = saturate(BloomLuminance * 0.5f);
-
-	// float4 OutColor;
-	// OutColor.rgb = outColor.rgb;
-	// OutColor.rgb *= Amount;
-	// OutColor.a = 0.0f;
-
-    return outColor;
-    //return pow(litColor, 1/2.2f);
+    //return outColor;
+    return pow(litColor, 1/2.2f);
   	//return ambient * (shadowFactor + 0.1);
     //return pin.Color * (shadowFactor + 0.1);
 	//return test;

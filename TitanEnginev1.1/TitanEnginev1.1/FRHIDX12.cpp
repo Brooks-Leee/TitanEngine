@@ -44,11 +44,31 @@ void FRHIDX12::ExecuteCommand()
 	FlushCommandQueue();
 }
 
-TRenderTarget* FRHIDX12::CreateRenderTarget(RENDERBUFFER_TYPE RTType, int rtvIndex, int srvIndex, int dsvIndex, int Width, int Height)
+TRenderTarget* FRHIDX12::CreateRenderTarget(TEX_FORMAT format, int rtvIndex, int srvIndex, int dsvIndex, int Width, int Height)
 {
 	TRenderTargetDX12* renderTarget = new TRenderTargetDX12();
 	renderTarget->mWidth = Width;
 	renderTarget->mHeight = Height;
+
+	DXGI_FORMAT dxFormat;
+	switch (format)
+	{
+	case FORMAT_R8G8B8A8_UNORM:
+		dxFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+		break;
+	case FORMAT_D24_UNORM_S8_UINT:
+		dxFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+		break;
+	case FORMAT_R16G16B16A16_FLOAT:
+		dxFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+		break;
+	case FORMAT_UNKNOWN:
+		dxFormat = DXGI_FORMAT_UNKNOWN;
+		break;
+	default:
+		break;
+	}
+
 
 	// Create renderTarget Resource and view
 	D3D12_RESOURCE_DESC texDesc;
@@ -59,14 +79,14 @@ TRenderTarget* FRHIDX12::CreateRenderTarget(RENDERBUFFER_TYPE RTType, int rtvInd
 	texDesc.DepthOrArraySize = 1;
 	texDesc.Height = Height;
 	texDesc.MipLevels = 1;
-	texDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	texDesc.Format = dxFormat;
 	texDesc.SampleDesc.Count = 1;
 	texDesc.SampleDesc.Quality = 0;
 	texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 	texDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 
 	D3D12_CLEAR_VALUE optCleard;
-	optCleard.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	optCleard.Format = dxFormat;
 	optCleard.DepthStencil.Depth = 1.0f;
 	optCleard.DepthStencil.Stencil = 0;
 
@@ -84,7 +104,7 @@ TRenderTarget* FRHIDX12::CreateRenderTarget(RENDERBUFFER_TYPE RTType, int rtvInd
 
 	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc;
 
-	rtvDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	rtvDesc.Format = dxFormat;
 
 	rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 	rtvDesc.Texture2D.PlaneSlice = 0;
@@ -128,7 +148,7 @@ TRenderTarget* FRHIDX12::CreateRenderTarget(RENDERBUFFER_TYPE RTType, int rtvInd
 	// Create SRV to resource so we can sample the HDR RT in shader.
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	srvDesc.Format = dxFormat;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Texture2D.MostDetailedMip = 0;
 	srvDesc.Texture2D.MipLevels = 1;
